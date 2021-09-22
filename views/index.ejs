@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    
+    <meta charset="utf-8" />
+    <link rel="icon" href="" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>App Title | Login</title>
+
+    <!-- Import the webpage's stylesheet -->
+    <link rel="stylesheet" href="/style.css" />
+    <link rel="stylesheet" href="./css/bootstrap.min.css"> 
+  </head>
+  <body>
+    
+    <section id="nav-bar">
+      <nav class="nav justify-content-end">
+        <a class="nav-link" href="#">Home</a>
+        <a class="nav-link" href="#">New Posts</a>
+        <a class="nav-link" href="#">Top Posts</a>
+        <a class="nav-link" href="#">About</a>
+      </nav>
+    </section>
+
+    <section id="form-section" class="form-group">
+      <header>
+        <h3 id="login-title">
+          Login
+        </h3>
+      </header>
+      <form id="login-form" name="form" method="post" action="/login">
+        <label for="email-input">
+          Email
+          <input
+            name="email"
+            id="email-input"
+            type="text"
+            maxlength="100"
+            placeholder="example@email.com"
+            class="form-control"
+          />
+        </label>
+        <br />
+        <label for="password-input">
+          Password
+          <input
+            name="password"
+            id="password-input"
+            type="password"
+            maxlength="50"
+            minlength="6"
+            placeholder="******"
+            class="form-control"
+          />
+        </label>
+        <br />
+        <label for="login-button">
+          <button type="submit" id="login-button" class="form-control btn btn-outline-primary">Login</button>
+        </label>
+      </form>
+      <footer>
+        Don't have an account? <a href="/register">Register here</a>!
+      </footer>
+    </section>
+  </body>
+</html>

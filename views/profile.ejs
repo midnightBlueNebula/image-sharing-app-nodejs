@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Email App | Profile</title>
+
+    
+    <!-- import the webpage's stylesheet -->
+    <link rel="stylesheet" href="/style.css" />
+    <link rel="stylesheet" href="./css/bootstrap.min.css"> 
+  </head>
+
+  <body>
+    <section id="profile-card">
+    </section>
+    <section id="profile-header">
+      <header>
+        <h3 id="profile-title">
+          Profile
+        </h3>
+      </header>
+    </section>
+    
+    <section id="profile-name">
+      <h1 id="profile-user-title">
+        <%= user.name %>
+      </h1>
+    </section>
+    
+    <section id="user-posts">
+    </section>
+    
+    <section id="user-feed">
+    </section>
+    
+    <a href="/logout" id="logout-button">Log out</a>
+  </body>
+</html>
+
