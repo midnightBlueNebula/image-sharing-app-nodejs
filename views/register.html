@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Email App | Register</title>
+
+    <!-- import the webpage's stylesheet -->
+    <link rel="stylesheet" href="/style.css" />
+    <link rel="stylesheet" href="./css/bootstrap.min.css"> 
+  </head>
+
+  <body>
+    <section id="nav-bar">
+      <nav class="nav justify-content-end">
+        <a class="nav-link" href="#">Home</a>
+        <a class="nav-link" href="#">New Posts</a>
+        <a class="nav-link" href="#">Top Posts</a>
+        <a class="nav-link" href="#">About</a>
+      </nav>
+    </section>
+    
+    <section id="form-section" class="form-group">
+      <header>
+        <h3 id="register-title">
+          Register
+        </h3>
+      </header>
+
+      <form id="register-form" name="form" method="post" action="/register">
+        <label for="name-input">
+          Name
+          <input
+            name="name"
+            id="name-input"
+            type="text"
+            maxlength="50"
+            class="form-control"
+            placeholder="Username"
+          />
+        </label>
+        <br />
+        <label for="email-input">
+          Email
+          <input
+            name="email"
+            id="email-input"
+            type="text"
+            maxlength="50"
+            placeholder="example"
+            class="form-control"
+          />
+        </label>
+        <br />
+        <label for="password-input">
+          Password
+          <input
+            name="password"
+            id="password-input"
+            type="password"
+            maxlength="50"
+            minlength="6"
+            placeholder="******"
+            class="form-control"
+          />
+        </label>
+        <br />
+        <label for="register-button">
+          <button type="submit" id="register-button" class="btn btn-outline-primary">Register</button>
+        </label>
+      </form>
+
+      <footer>
+        Already have an account? <a href="/">Login here</a>!
+      </footer>
+    </section>
+  </body>
+</html>
