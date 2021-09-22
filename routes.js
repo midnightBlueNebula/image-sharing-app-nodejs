@@ -48,13 +48,16 @@ module.exports = function(app, db, bucket) {
                 res.send(fail.message);
                 return;
               } else {
+                const date = new Date();
                 db.collection("users").insertOne(
                   {
                     _id: new ObjectId(),
                     email: email,
                     name: name,
                     password_hash: hash,
-                    admin: false
+                    admin: false,
+                    createdAt: date,
+                    updatedAt: date
                   },
                   (insert_error, new_el) => {
                     if (insert_error) {
@@ -193,12 +196,15 @@ module.exports = function(app, db, bucket) {
 
   const createPost = (db, cluster, userId, image, text) => {
     return new Promise((resolve, reject) => {
+      const date = new Date();
       db.collection(cluster).InsertOne(
         {
           _id: new ObjectId(),
-          creator_id: userId,
+          creatorId: userId,
           image: image,
-          text: text
+          text: text,
+          createdAt: date,
+          updatedAt: date
         },
         (error, result) => {
           if (error) {
@@ -267,18 +273,21 @@ module.exports = function(app, db, bucket) {
   const postViewedByUser = (db, cluster, postId, userId) => {
     return new Promise((resolve, reject) => {
       db.collection(cluster).findOne(
-        { post_id: ObjectId(postId), user_id: ObjectId(userId) },
+        { postId: ObjectId(postId), user_id: ObjectId(userId) },
         (error, result) => {
           if (error) {
             reject(error);
           } else if (result) {
             resolve(false);
           } else {
+            const date = new Date();
             db.collection(cluster).insertOne(
               {
                 _id: new ObjectId(),
-                post_id: postId,
-                user_id: userId
+                postId: postId,
+                userId: userId,
+                createdAt: date,
+                updatedAt: date
               },
               (fail, outcome) => {
                 if (fail) {
@@ -304,18 +313,21 @@ module.exports = function(app, db, bucket) {
   const likePost = (db, cluster, postId, userId) => {
     return new Promise((resolve, reject) => {
       db.collection(cluster).findOne(
-        { post_id: ObjectId(postId), user_id: ObjectId(userId) },
+        { postId: ObjectId(postId), userId: ObjectId(userId) },
         (error, result) => {
           if (error) {
             reject(error);
           } else if (result) {
             resolve(false);
           } else {
+            const date = new Date();
             db.collection(cluster).insertOne(
               {
                 _id: new ObjectId(),
-                post_id: postId,
-                user_id: userId
+                postId: postId,
+                userId: userId,
+                createdAt: date,
+                updatedAt: date
               },
               (fail, outcome) => {
                 if (fail) {
@@ -330,27 +342,29 @@ module.exports = function(app, db, bucket) {
       );
     });
   };
-  
+
   //call getLikedPosts as shown beneath
   /* 
     callPromise(getLikedPosts(db, "image-app-liked-posts", userId)).then(function(result) {
       use received data here...
     });
   */
-  
+
   const getLikedPosts = (db, cluster, userId) => {
     return new Promise((resolve, reject) => {
-      db.collection(cluster).find({userId: userId}).toArray((error, result) => {
-        if (error) {
-          reject(error)
-        } else if (result) {
-          resolve(result)
-        } else {
-          resolve(false)
-        }
-      })
-    })
-  }
+      db.collection(cluster)
+        .find({ userId: userId })
+        .toArray((error, result) => {
+          if (error) {
+            reject(error);
+          } else if (result) {
+            resolve(result);
+          } else {
+            resolve(false);
+          }
+        });
+    });
+  };
 
   //call isCreator as shown beneath
   /* 
@@ -363,7 +377,7 @@ module.exports = function(app, db, bucket) {
     return new Promise((resolve, reject) => {
       callPromise(getPostById(db, cluster, postId)).then(function(result) {
         if (result) {
-          if (ObjectId(result.creator_id) == ObjectId(userId)) {
+          if (ObjectId(result.creatorId) == ObjectId(userId)) {
             resolve(true);
           } else {
             resolve(false);
@@ -377,15 +391,18 @@ module.exports = function(app, db, bucket) {
 
   //call getPostsOfUser as shown beneath
   /* 
-    callPromise(getPostsOfUser(db, "image-app-posts", userId)).then(function(result) {
+    callPromise(getPostsOfUser(db, "image-app-posts", userId, dateFilter)).then(function(result) {
       use received data here...
     });
   */
 
-  const getPostsOfUser = (db, cluster, userId) => {
+  const getPostsOfUser = (db, cluster, userId, dateFilter = false) => {
     return new Promise((resolve, reject) => {
+      const query = dateFilter
+        ? { userId: ObjectId(userId), createdAt: { $gte: dateFilter } }
+        : { userId: ObjectId(userId) };
       db.collection(cluster)
-        .find({ user_id: ObjectId(userId) })
+        .find(query)
         .toArray((error, resultArray) => {
           if (error) {
             reject(error);
@@ -456,11 +473,14 @@ module.exports = function(app, db, bucket) {
         if (result) {
           resolve(false);
         } else {
+          const date = new Date();
           db.collection(cluster).insertOne(
             {
               _id: new ObjectId(),
               followerId: followerId,
-              followedId: followedId
+              followedId: followedId,
+              createdAt: date,
+              updatedAt: date
             },
             (error, data) => {
               if (error) {
@@ -491,6 +511,61 @@ module.exports = function(app, db, bucket) {
             reject(error);
           } else {
             resolve(result);
+          }
+        }
+      );
+    });
+  };
+
+  //call getFollowedUsers as shown beneath
+  /* 
+    callPromise(getFollowedUsers(db, "image-app-relationships", userId)).then(function(result) {
+      use received data here...
+    });
+  */
+
+  const getFollowedUsers = (db, cluster, userId) => {
+    return new Promise((resolve, reject) => {
+      db.collection(cluster)
+        .find({ userId: userId })
+        .toArray((error, result) => {
+          if (error) {
+            reject(error);
+          } else if (result) {
+            resolve(result);
+          } else {
+            resolve(false);
+          }
+        });
+    });
+  };
+
+  const getUserFeed = (db, relationshipsCluster, postsCluster, userId) => {
+    return new Promise((resolve, reject) => {
+      callPromise(getFollowedUsers(db, relationshipsCluster, userId)).then(
+        function(result) {
+          if (result) {
+            let dateFilter = new Date();
+            dateFilter.setHours(dateFilter.getHours() - 6);
+            let feed = [];
+            for (let i = 0; i < result.length(); ++i) {
+              callPromise(
+                getPostsOfUser(
+                  db,
+                  postsCluster,
+                  result[i].creatorId,
+                  dateFilter
+                )
+              ).then(function(data) {
+                if (data) {
+                  resolve(data);
+                } else {
+                  resolve(false);
+                }
+              });
+            }
+          } else {
+            resolve(false);
           }
         }
       );
