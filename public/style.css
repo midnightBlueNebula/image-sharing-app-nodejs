@@ -1,24 +1,83 @@
-/******************************************************************************
-START Glitch hello-app default styles
-
-The styles in this section do some minimal CSS resets, set default fonts and 
-colors, and handle the layout for our footer and "Remix on Glitch" button. If
-you're new to CSS they may seem a little complicated, but you can scroll down
-to this section's matching END comment to see page-specific styles.
-******************************************************************************/
-/* Our default values set as CSS variables */
-
+textarea{
+  resize: none !important;
+}
 
 #form-section {
   line-height: 50px;
-  padding-top: 50px;
+  padding-top: 40px;
   margin: auto;
   width: 50%;
   text-align:center
 }
 
-label {
-  text-align: left;
+#image-preview{
+  width: 170px;
+  height: 100px;
+  border: 1px solid lightblue;
+  margin: auto;
 }
 
+#img-preview{
+  width: 170px;
+  height: 100px;
+}
+
+#profile-img-preview{
+  width: 100%;
+  height: 50vh;
+}
+
+#post-image{
+  width: 100%;
+  height: 50vh;
+}
+
+#post-title{
+  color: white;
+  text-shadow: 5px 5px 2px black;
+  text-align: center;
+  -webkit-text-stroke: black
+}
+
+#post-context{
+  text-align:center;
+}
+
+#profile-card{
+  overflow-y: scroll;
+  height: 650px;
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+#profile-card::-webkit-scrollbar {
+  display: none;
+}
+
+#liked-posts{
+  overflow-y: scroll;
+  height: 650px;
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+#liked-posts::-webkit-scrollbar {
+  display: none;
+}
+
+#feed{
+  overflow-y: scroll;
+  height: 650px;
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+#feed::-webkit-scrollbar {
+  display: none;
+}
+
+#show-posts-div{
+  width: 33%;
+  margin: auto;
+}
 

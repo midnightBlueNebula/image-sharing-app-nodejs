@@ -1,0 +1,46 @@
+<div class="card" id="post-card" style="width: 100%; margin:auto;"> 
+      
+  <img class="card-img-top" id="post-image" src=<%= post.imageURL %>>
+  <div class="card-img-overlay">
+    <h5 class="card-title" id="post-title"><%= post.title %></h5>
+  </div>
+  <div class="card-body">
+    <p class="card-text" id="post-context"><%= post.context %></p>
+  </div>
+    <hr/>
+  <div class="row" id="username-date-row" style="margin:auto;">
+    <div class="col-lg">
+      <%= creator.name %>
+    </div>
+    <div class="col-lg" style="width:300px">
+      <%= post.createdAt.toLocaleString() %>
+    </div>
+  </div>
+  <div class="card-body" style="margin:auto; padding-bottom:1px">
+      <a class="card-link"><%= post.likedUserIds.length %> <%= post.likedUserIds.length > 1 ? "likes" : "like" %></a>
+      <a class="card-link"><%= post.commentIds.length %> <%= post.commentIds.length > 1 ? "comments" : "comment" %></a>
+    </div>
+  <% if(viewerId && viewerId != creator._id.toString() && post.likedUserIds.indexOf(viewerId) == -1) { %>
+    <div class="card-body like-comment-div" style="margin:auto; padding-bottom:1px">
+      <p class="card-link like">Like</p>
+      <p class="card-link comment">Comment</p>
+    </div>
+  <% } else if(viewerId && viewerId == creator._id.toString()) { %>
+    <div class="card-body remove-post-div" style="margin:auto; padding-bottom:1px">
+      <a href="" class="card-link">Remove Post</a>
+    </div>  
+  <% } else if(viewerId && post.likedUserIds.indexOf(viewerId) != -1) { %>
+    <div class="card-body like-comment-div" style="margin:auto; padding-bottom:1px">
+      <p class="card-link liked">Liked</p>
+      <p class="card-link comment">Comment</p>
+    </div>
+  <% } else { %>
+    <div class="card-body" style="text-align:center; padding-bottom:1px">
+      <a href="/register" class="card-link">Register now to like and comment on posts & follow your favorite users!</a>
+    </div>
+  <% } %>
+  <hr/>
+  <div class="card-body" style="text-align:center; padding-top:1px">
+    <a href="#" class="card-link">View Comments</a>
+  </div>
+</div>
