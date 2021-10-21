@@ -1,10 +1,12 @@
 const session = require("express-session");
 const bcrypt = require("bcrypt");
 const ObjectId = require("mongodb").ObjectId;
-const helper = require("./helper.js");
+const h = require("./helper.js");
+const fs = require('fs');
+const path = require('path');
 const saltRounds = 12;
 
-module.exports = function(app, db, bucket) {
+module.exports = function(app, db) {
   app.use(
     session({
       secret: process.env.SECRET_SESSION_KEY,
@@ -33,13 +35,13 @@ module.exports = function(app, db, bucket) {
         res.redirect("/profile");
       }
 
-      const email = helper.cleanseString(req.body.email);
-      const name = helper.cleanseString(req.body.name);
+      const email = h.cleanseString(req.body.email);
+      const name = h.cleanseString(req.body.name);
       const password = req.body.password;
 
-      callPromise(getUserByEmail(db, "users", email)).then(function(result) {
+      callPromise(getUserByEmail(db, "image-app-users", email)).then(function(result) {
         if (result) {
-          res.send("email already has taken");
+          res.send("email has already been taken");
           return;
         } else {
           bcrypt.genSalt(saltRounds, function(fail, salt) {
@@ -49,13 +51,15 @@ module.exports = function(app, db, bucket) {
                 return;
               } else {
                 const date = new Date();
-                db.collection("users").insertOne(
+                db.collection("image-app-users").insertOne(
                   {
                     _id: new ObjectId(),
                     email: email,
                     name: name,
                     password_hash: hash,
+                    about: "",
                     admin: false,
+                    profileImageURL: "",
                     createdAt: date,
                     updatedAt: date
                   },
@@ -64,6 +68,7 @@ module.exports = function(app, db, bucket) {
                       res.send(insert_error.message);
                     } else {
                       req.session.user_id = new_el.ops[0]._id;
+                      req.session.user_name = new_el.ops[0].name;
                       res.redirect("/profile");
                     }
                   }
@@ -79,10 +84,10 @@ module.exports = function(app, db, bucket) {
     if (loggedIn(req.session.user_id)) {
       res.redirect("/profile");
     }
-    const email = helper.cleanseString(req.body.email);
+    const email = h.cleanseString(req.body.email);
     const password = req.body.password;
 
-    callPromise(getUserByEmail(db, "users", email)).then(function(result) {
+    callPromise(getUserByEmail(db, "image-app-users", email)).then(function(result) {
       if (!result) {
         res.send("Email is not registered.");
         return;
@@ -95,7 +100,8 @@ module.exports = function(app, db, bucket) {
         } else {
           if (outcome) {
             req.session.user_id = result._id;
-            res.redirect("/profile");
+            req.session.user_name = result.name;
+            back(req, res)
           } else {
             res.send("Wrong password.");
           }
@@ -115,27 +121,234 @@ module.exports = function(app, db, bucket) {
       res.redirect("/");
     }
 
-    callPromise(getUserById(db, "users", id)).then(function(result) {
-      if (!result) {
-        res.send("user not found");
-      }
-      renderWithData(res, "profile.ejs", { user: result });
+    callPromise(getUserById(db, "image-app-users", id)).then(function(user) {
+      callPromise(getPostsOfUser(db, "image-app-posts", ""+user._id+"")).then(function(posts) {
+        renderWithData(res, "profile.ejs", { user: user, posts: posts });
+      });
+    });
+  });
+  
+  app.post("/addProfileImage", (req, res) => {
+    if (!loggedIn(req.session.user_id)) {
+      res.redirect("/");
+    }
+    
+    const imageURL = h.cleanseString(req.body.imageURL)
+    
+    db.collection("image-app-users").updateOne({ _id: ObjectId(req.session.user_id) }, 
+                                               { $set: { profileImageURL: imageURL } })
+    
+    res.redirect("/profile")
+  })
+  
+  app.post("/changeProfileImage", (req, res) => {
+    if (!loggedIn(req.session.user_id)) {
+      res.redirect("/");
+    }
+    
+    db.collection("image-app-users").updateOne({ _id: ObjectId(req.session.user_id) }, 
+                                               { $set: { profileImageURL: "" } })
+    
+    res.redirect("/profile")
+  })
+  
+  app.post("/addProfileDescription", (req, res) => {
+    if (!loggedIn(req.session.user_id)) {
+      res.redirect("/");
+    }
+    
+    const about = h.cleanseString(req.body.about)
+    
+    db.collection("image-app-users").updateOne({ _id: ObjectId(req.session.user_id) }, 
+                                               { $set: { about: about } })
+    
+    res.redirect("/profile")
+  })
+  
+  app.get("/changeProfileDescription", (req, res) => {
+    if (!loggedIn(req.session.user_id)) {
+      res.redirect("/");
+    }
+    
+    db.collection("image-app-users").updateOne({ _id: ObjectId(req.session.user_id) }, 
+                                               { $set: { about: "" } })
+    
+    res.redirect("/profile")
+  })
+
+  app.get("/post", (req, res) => {
+    if (!loggedIn(req.session.user_id)) {
+      res.redirect("/");
+    }
+    
+    const id = req.session.user_id
+    
+    callPromise(getUserById(db, "image-app-users", id)).then(function(result) {
+      renderWithData(res, "post.ejs", { user: result });
     });
   });
 
-  app.get("/post", (req, res) => {
-    if (loggedIn(req.session.user_id)) {
-      res.redirect("/profile");
+  app.post("/post", (req, res) => {
+    if (!loggedIn(req.session.user_id)) {
+      res.redirect("/");
     }
+    
+    const userId = req.session.user_id
+    const title = req.body.title
+    const imageURL = req.body.imageURL
+    const context = req.body.context
+
+    callPromise(createPost(db, "image-app-posts", userId, title, imageURL, context)).then(function(result) {
+      const path = "/show-post/" + result._id
+      res.redirect(path)
+    });
   });
 
-  app.post("/post", (req, res) => {});
+  app.delete("/post/:id", (req, res) => {
+    if (!loggedIn(req.session.user_id)) {
+      res.redirect("/");
+    }
+    
+    if (req.session.currentURL == `/post/${req.params.id}`) {
+      req.session.currentURL = "/new-posts"
+    } 
+    
+    callPromise(isAdmin(db, "image-app-users", req.session.user_id)).then(function(admin) {
+      if(admin) {
+        callPromise(deletePost(db, "image-app-posts", req.params.id)).then(function(post) {
+            back(req, res)  
+        })
+      } else {
+        callPromise(isCreator(db, "image-app-posts", req.params.id, req.session.user_id)).then(function(creator) {
+          if(creator) {
+            callPromise(deletePost(db, "image-app-posts", req.params.id)).then(function(post) {
+              back(req, res)
+            })
+          } else {
+            res.redirect("/")
+          }
+        })
+      }
+    })
+  });
+  
+  app.get("/show-post/:id", (req, res) => {
+    const postId = req.params.id
+    req.session.currentURL = `/show-post/${postId}`
+    
+    callPromise(getPostById(db, "image-app-posts", postId)).then(function(post) {
+      if(post){
+        callPromise(getUserById(db, "image-app-users", post.creatorId)).then(function(creator) {
+          let data = [{post: post, creator: creator}]
+          renderWithData(res, "showPosts.ejs", { data: data, viewerId: req.session.user_id });
+        });
+      } else {
+        res.send("/no data available")
+      }
+    });
+  });
+  
 
-  app.delete("/post", (req, res) => {});
+  app.get("/new-posts", (req, res) => {
+    let date = new Date();
+    date.setHours(date.getHours()-1)
+    const viewerId = req.session.user_id ? req.session.user_id : null
+    req.session.currentURL = "/new-posts"
+  
+    callPromise(getPostsByDate(db, "image-app-posts", date)).then(function(posts) {
+      if(posts){
+        let data = []
+        let userIds = []
+        
+        posts.forEach((el) => {
+          if(userIds.indexOf(ObjectId(el.creatorId)) == -1) {
+            userIds.push(ObjectId(el.creatorId))
+          }
+        })
+        
+        callPromise(getUserByIds(db, "image-app-users", userIds)).then(function(users) {
+            if(users) {
+              users.forEach((user) => {
+                let userPosts = posts.filter((el) => el.creatorId == user._id.toString())
+                
+                userPosts.forEach((post) => {
+                  data.push({ post: post, creator: user })
+                })
+              })
+         
+              renderWithData(res, "showPosts.ejs", { data: data.sort((a,b) => b.post.createdAt - a.post.createdAt), 
+                                                     viewerId: req.session.user_id });
+            } else {
+              res.send("/no data available")
+            }
+        }) 
+      } else {
+        res.send("/no data available")
+      }
+    });
+  });
 
-  app.get("/new-posts", (req, res) => {});
-
-  app.get("/top-posts", (req, res) => {});
+  app.get("/top-posts", (req, res) => {
+    const date = req.query.date ? req.query.date : new Date("01 Jan 2021")
+    req.session.currentURL = "/top-posts"
+    
+    callPromise(getPostsByDate(db, "image-app-posts", date)).then(function(posts) {
+      if(posts){
+        let data = []
+        let userIds = []
+        
+        posts.forEach((el) => {
+          if(userIds.indexOf(ObjectId(el.creatorId)) == -1) {
+            userIds.push(ObjectId(el.creatorId))
+          }
+        })
+        
+        callPromise(getUserByIds(db, "image-app-users", userIds)).then(function(users) {
+            if(users) {
+              users.forEach((user) => {
+                let userPosts = posts.filter((el) => el.creatorId == user._id.toString())
+                
+                userPosts.forEach((post) => {
+                  data.push({ post: post, creator: user })
+                })
+              })
+         
+              renderWithData(res, "showPosts.ejs", { data: data.sort((a,b) => b.post.likedUserIds.length - a.post.likedUserIds.length), 
+                                                     viewerId: req.session.user_id });
+            } else {
+              res.send("/no data available")
+            }
+        }) 
+      } else {
+        res.send("/no data available")
+      }
+    });
+  });
+  
+  
+  app.post("/like-post/:postId/:userId", (req, res) => {
+    if (!loggedIn(req.session.user_id)) {
+      res.redirect("/");
+    }
+  });
+  
+  app.post("/regret-like-post/:postId/:userId", (req, res) => {
+    if (!loggedIn(req.session.user_id)) {
+      res.redirect("/");
+    }
+  });
+  
+  app.post("/like-comment/:commentId/:userId", (req, res) => {
+    if (!loggedIn(req.session.user_id)) {
+      res.redirect("/");
+    }
+  });
+  
+  app.post("/regret-like-comment/:commentId/:userId", (req, res) => {
+    if (!loggedIn(req.session.user_id)) {
+      res.redirect("/");
+    }
+  });
 
   /*                                     helper methods depends on app and db added here                                    */
 
@@ -147,7 +360,7 @@ module.exports = function(app, db, bucket) {
 
   //call getUserById as shown beneath
   /* 
-    callPromise(getUserById(db, "users", id)).then(function(result) {
+    callPromise(getUserById(db, "image-app-users", id)).then(function(result) {
       use received data here...
     });
   */
@@ -165,10 +378,31 @@ module.exports = function(app, db, bucket) {
       });
     });
   };
+  
+  //call getUserByIds as shown beneath
+  /* 
+    callPromise(getUserById(db, "image-app-users", ids)).then(function(result) {
+      use received data here...
+    });
+  */
+
+  const getUserByIds = (db, cluster, ids) => {
+    return new Promise((resolve, reject) => {
+      db.collection(cluster).find({ _id: { $in: ids } }).toArray((error, result) => {
+        if(error) {
+          reject(error)
+        } else if(result) {
+          resolve(result)
+        } else {
+          resolve(false)
+        }
+      });
+    });
+  };
 
   //call getUserByEmail as shown beneath
   /* 
-    callPromise(getUserByEmail(db, "users", email)).then(function(result) {
+    callPromise(getUserByEmail(db, "image-app-users", email)).then(function(result) {
       use received data here...
     });
   */
@@ -189,20 +423,24 @@ module.exports = function(app, db, bucket) {
 
   //call createPost as shown beneath
   /* 
-    callPromise(createPost(db, "image-app-posts", userId, image, text)).then(function(result) {
+    callPromise(createPost(db, "image-app-posts", userId, title, imageURL, context)).then(function(result) {
       use received data here...
     });
   */
 
-  const createPost = (db, cluster, userId, image, text) => {
+  const createPost = (db, cluster, userId, title, imageURL, context, tags) => {
     return new Promise((resolve, reject) => {
       const date = new Date();
-      db.collection(cluster).InsertOne(
+      db.collection(cluster).insertOne(
         {
           _id: new ObjectId(),
           creatorId: userId,
-          image: image,
-          text: text,
+          title: title,
+          imageURL: imageURL,
+          context: context,
+          tags: tags,
+          likedUserIds: [],
+          commentIds: [],
           createdAt: date,
           updatedAt: date
         },
@@ -240,6 +478,29 @@ module.exports = function(app, db, bucket) {
       );
     });
   };
+  
+  //call getPostsByTags as shown beneath
+  /* 
+    callPromise(getPostsByTags(db, "image-app-posts", tags)).then(function(result) {
+      use received data here...
+    });
+  */
+  
+  const getPostsByTags = (db, cluster, tags) => {
+    return new Promise((resolve, reject) => {
+      db.collection(cluster).find( { tags: { $elemMatch: { tags } } })
+                            .sort({ createdAt: -1 })
+                            .toArray((error, result) => {
+        if(error) {
+          reject(error)
+        } else if(result) {
+          resolve(result)
+        } else {
+          resolve(false)
+        }
+      })
+    })
+  }
 
   //call deletePost as shown beneath
   /* 
@@ -256,56 +517,17 @@ module.exports = function(app, db, bucket) {
           if (error) {
             reject(error);
           } else {
-            resolve(result);
+            resolve(true);
           }
         }
       );
     });
   };
 
-  //call viewPost as shown beneath
-  /* 
-    callPromise(postViewedByUser(db, "image-app-posts-view-track", postId, userId)).then(function(result) {
-      use received data here...
-    });
-  */
-
-  const postViewedByUser = (db, cluster, postId, userId) => {
-    return new Promise((resolve, reject) => {
-      db.collection(cluster).findOne(
-        { postId: ObjectId(postId), user_id: ObjectId(userId) },
-        (error, result) => {
-          if (error) {
-            reject(error);
-          } else if (result) {
-            resolve(false);
-          } else {
-            const date = new Date();
-            db.collection(cluster).insertOne(
-              {
-                _id: new ObjectId(),
-                postId: postId,
-                userId: userId,
-                createdAt: date,
-                updatedAt: date
-              },
-              (fail, outcome) => {
-                if (fail) {
-                  reject(fail);
-                } else {
-                  resolve(outcome.ops[0]);
-                }
-              }
-            );
-          }
-        }
-      );
-    });
-  };
 
   //call likePost as shown beneath
   /* 
-    callPromise(likePost(db, "image-app-liked-posts", postId, userId)).then(function(result) {
+    callPromise(likePost(db, "image-app-posts", postId, userId)).then(function(result) {
       use received data here...
     });
   */
@@ -313,47 +535,64 @@ module.exports = function(app, db, bucket) {
   const likePost = (db, cluster, postId, userId) => {
     return new Promise((resolve, reject) => {
       db.collection(cluster).findOne(
-        { postId: ObjectId(postId), userId: ObjectId(userId) },
+        { _id: ObjectId(postId), $in: { likedUserIds: userId} },
         (error, result) => {
           if (error) {
             reject(error);
           } else if (result) {
             resolve(false);
           } else {
-            const date = new Date();
-            db.collection(cluster).insertOne(
+            db.collection(cluster).updateOne(
               {
-                _id: new ObjectId(),
-                postId: postId,
-                userId: userId,
-                createdAt: date,
-                updatedAt: date
-              },
-              (fail, outcome) => {
-                if (fail) {
-                  reject(fail);
-                } else {
-                  resolve(outcome.ops[0]);
-                }
-              }
-            );
+                likedUserIds: { $push: userId }
+              });
+            resolve(true)
+          }
+        }
+      );
+    });
+  };
+  
+  //call regretLikePost as shown beneath
+  /* 
+    callPromise(regretLikePost(db, "image-app-posts", postId, userId)).then(function(result) {
+      use received data here...
+    });
+  */
+
+  const regretLikePost = (db, cluster, postId, userId) => {
+    return new Promise((resolve, reject) => {
+      db.collection(cluster).findOne(
+        { _id: ObjectId(postId), $in: { likedUserIds: userId } },
+        (error, result) => {
+          if (error) {
+            reject(error);
+          } else if (result) {
+            db.collection(cluster).updateOne(
+              {
+                likedUserIds: { $pull: userId }
+              });
+            resolve(true)
+          } else {
+            resolve(false);
           }
         }
       );
     });
   };
 
-  //call getLikedPosts as shown beneath
+  //call getLikedPostsByUser as shown beneath
   /* 
-    callPromise(getLikedPosts(db, "image-app-liked-posts", userId)).then(function(result) {
+    callPromise(getLikedPostsByUser(db, "image-app-posts", userId)).then(function(result) {
       use received data here...
     });
   */
 
-  const getLikedPosts = (db, cluster, userId) => {
+  const getLikedPostsByUser = (db, cluster, userId) => {
     return new Promise((resolve, reject) => {
       db.collection(cluster)
-        .find({ userId: userId })
+        .find({$in: { likedUserIds: userId } })
+        .sort({ createdAt: -1 })
         .toArray((error, result) => {
           if (error) {
             reject(error);
@@ -377,7 +616,7 @@ module.exports = function(app, db, bucket) {
     return new Promise((resolve, reject) => {
       callPromise(getPostById(db, cluster, postId)).then(function(result) {
         if (result) {
-          if (ObjectId(result.creatorId) == ObjectId(userId)) {
+          if (result.creatorId == userId) {
             resolve(true);
           } else {
             resolve(false);
@@ -391,18 +630,24 @@ module.exports = function(app, db, bucket) {
 
   //call getPostsOfUser as shown beneath
   /* 
-    callPromise(getPostsOfUser(db, "image-app-posts", userId, dateFilter)).then(function(result) {
+    callPromise(getPostsOfUser(db, "image-app-posts", userId, dateFilter, false)).then(function(result) {
       use received data here...
     });
   */
 
-  const getPostsOfUser = (db, cluster, userId, dateFilter = false) => {
+  const getPostsOfUser = (db, cluster, userId, dateFilter = false, multipleUsers = false) => {
     return new Promise((resolve, reject) => {
-      const query = dateFilter
-        ? { userId: ObjectId(userId), createdAt: { $gte: dateFilter } }
-        : { userId: ObjectId(userId) };
+      var query = multipleUsers
+        ? { creatorId: { $in: userId } } 
+        : { creatorId: userId };
+      
+      if(dateFilter){
+        query.createdAt =  { $gte: dateFilter }
+      }
+      
       db.collection(cluster)
         .find(query)
+        .sort({ createdAt: -1 })
         .toArray((error, resultArray) => {
           if (error) {
             reject(error);
@@ -414,10 +659,58 @@ module.exports = function(app, db, bucket) {
         });
     });
   };
+  
+  //call getPostsByDate as shown beneath
+  /* 
+    callPromise(getPostsByDate(db, "image-app-posts", date)).then(function(result) {
+      use received data here...
+    });
+  */
+  
+  const getPostsByDate = (db, cluster, date) => {
+    return new Promise((resolve, reject) => {
+      db.collection(cluster)
+        .find({ createdAt: { $gte: date } })
+        .toArray((error, result) => {
+          if(error) {
+            reject(error)
+          } else if (result) {
+            resolve(result)
+          } else {
+            resolve(false)
+          }
+        })
+    })
+  }
+  
+  //call getTopLikedPosts as shown beneath
+  /* 
+    callPromise(getPostsOfUser(db, "image-app-posts", dateFilter)).then(function(result) {
+      use received data here...
+    });
+  */
+  
+  const getTopLikedPosts = (db, cluster, dateFilter) => {
+    return new Promise((resolve, reject) => {
+      db.collection(cluster)
+        .find({ createdAt: { $gte: dateFilter } })
+        .toArray((error, result) => {
+          if(error) {
+            reject(error)
+          } else if(result) {
+            const posts = result.sort((a, b) => { b.likedUserIds.length - a.likedUserIds.length })
+            resolve(posts)
+          } else {
+            resolve(false)
+          }
+        })
+    })
+  }
+  
 
   //call isAdmin as shown beneath
   /* 
-    callPromise(isAdmin(db, "users", userId)).then(function(result) {
+    callPromise(isAdmin(db, "image-app-users", userId)).then(function(result) {
       use received data here...
     });
   */
@@ -434,136 +727,214 @@ module.exports = function(app, db, bucket) {
     });
   };
 
-  //call getFollowRelationship as shown beneath
-  /* 
-    callPromise(getFollowRelationship(db, "image-app-relationships", followerId, followedId)).then(function(result) {
-      use received data here...
-    });
-  */
-
-  const getFollowRelationship = (db, cluster, followerId, followedId) => {
-    return new Promise((resolve, reject) => {
-      db.collection(cluster).findOne(
-        { followerId: followerId, followedId: followedId },
-        (error, result) => {
-          if (error) {
-            reject(error);
-          } else if (result) {
-            resolve(result);
-          } else {
-            resolve(false);
-          }
-        }
-      );
-    });
-  };
-
   //call followUser as shown beneath
   /* 
-    callPromise(followUser(db, "image-app-relationships", followerId, followedId)).then(function(result) {
+    callPromise(followUser(db, "image-app-users", followerId, followedId)).then(function(result) {
       use received data here...
     });
   */
 
   const followUser = (db, cluster, followerId, followedId) => {
-    return new Promise((resolve, reject) => {
-      callPromise(
-        getFollowRelationship(db, cluster, followerId, followedId)
-      ).then(function(result) {
-        if (result) {
-          resolve(false);
-        } else {
-          const date = new Date();
-          db.collection(cluster).insertOne(
-            {
-              _id: new ObjectId(),
-              followerId: followerId,
-              followedId: followedId,
-              createdAt: date,
-              updatedAt: date
-            },
-            (error, data) => {
-              if (error) {
-                reject(error);
-              } else {
-                resolve(data.ops[0]);
-              }
-            }
-          );
-        }
-      });
-    });
+    return new Promise((resolve, reject) => {});
   };
 
   //call unfollowUser as shown beneath
   /* 
-    callPromise(unfollowUser(db, "image-app-relationships", followerId, followedId)).then(function(result) {
+    callPromise(unfollowUser(db, "image-app-users", followerId, followedId)).then(function(result) {
       use received data here...
     });
   */
 
   const unfollowUser = (db, cluster, followerId, followedId) => {
-    return new Promise((resolve, reject) => {
-      db.collection(cluster).deleteOne(
-        { followerId: followerId, followedId: followedId },
-        (error, result) => {
-          if (error) {
-            reject(error);
-          } else {
-            resolve(result);
-          }
-        }
-      );
-    });
+    return new Promise((resolve, reject) => {});
   };
 
   //call getFollowedUsers as shown beneath
   /* 
-    callPromise(getFollowedUsers(db, "image-app-relationships", userId)).then(function(result) {
+    callPromise(getFollowedUsers(db, "image-app-users", userId)).then(function(result) {
       use received data here...
     });
   */
 
   const getFollowedUsers = (db, cluster, userId) => {
+    return new Promise((resolve, reject) => {});
+  };
+
+  const getUserFeed = (db, cluster, userId) => {
+    return new Promise((resolve, reject) => {});
+  };
+  
+  //call createComment as shown beneath
+  /* 
+    callPromise(createComment(db, "image-app-comments", content, postId, userId)).then(function(result) {
+      use received data here...
+    });
+  */
+  
+  const createComment = (db, cluster, content, postId, userId) => {
+    return new Promise((resolve, reject) => {
+      const date = new Date()
+      
+      db.collection(cluster)
+        .insertOne({ _id: new ObjectId(),
+                     content: content,
+                     createdAt: date,
+                     updatedAt: date,
+                     postId: postId,
+                     userId: userId,
+                     likedUserIds: [] }, (error, result) => {
+                       if(error) {
+                         reject(error)
+                       } else if(result) {
+                         resolve(result.ops[0])
+                       } else {
+                         resolve(false)
+                       }
+                     })
+    })
+  }
+  
+  //call getCommentById as shown beneath
+  /* 
+    callPromise(getCommentById(db, "image-app-comments", commentId)).then(function(result) {
+      use received data here...
+    });
+  */
+  
+  const getCommentById = (db, cluster, commentId) => {
+    return new Promise((resolve, reject) => {
+      db.collection(cluster).findOne({ _id: commentId }, (error, result) => {
+        if(error) {
+          reject(error)
+        } else if(result) {
+          resolve(result)
+        } else {
+          resolve(false)
+        }
+      })
+    })
+  }
+  
+  //call getCommentsByIds as shown beneath
+  /* 
+    callPromise(getCommentsByIds(db, "image-app-comments", commentIds)).then(function(result) {
+      use received data here...
+    });
+  */
+  
+  const getCommentsByIds = (db, cluster, commentIds) => {
+    return new Promise((resolve, reject) => {
+      db.collection(cluster)
+        .find({ _id: { $in: commentIds } })
+        .sort( { createdAt: -1 } )
+        .toArray((error, result) => {
+          if(error) {
+            reject(error)
+          } else if(result) {
+            resolve(result)
+          } else {
+            resolve(false)
+          }
+        })
+    })
+  }
+  
+  //call getCommentsOfPost as shown beneath
+  /* 
+    callPromise(getCommentsOfPost(db, "image-app-comments", postId)).then(function(result) {
+      use received data here...
+    });
+  */
+  
+  const getCommentsOfPost = (db, cluster, postId) => {
+    return new Promise((resolve, reject) => {
+      db.collection(cluster)
+        .find({ postId: postId })
+        .sort({ createdAt: -1 })
+        .toArray((error, result) => {
+          if(error) {
+            reject(error)
+          } else if(result) {
+            resolve(result)
+          } else {
+            resolve(false)
+          }
+        })
+    })
+  }
+  
+  //call getCommentsOfUser as shown beneath
+  /* 
+    callPromise(getCommentsOfUser(db, "image-app-comments", userId)).then(function(result) {
+      use received data here...
+    });
+  */
+  
+  const getCommentsOfUser = (db, cluster, userId) => {
     return new Promise((resolve, reject) => {
       db.collection(cluster)
         .find({ userId: userId })
+        .sort({ createdAt: -1 })
         .toArray((error, result) => {
+          if(error) {
+            reject(error)
+          } else if(result) {
+            resolve(result)
+          } else {
+            resolve(false)
+          }
+        })
+    })
+  }
+  
+   //call likeComment as shown beneath
+  /* 
+    callPromise(likeComment(db, "image-app-comments", commentId, userId)).then(function(result) {
+      use received data here...
+    });
+  */
+
+  const likeComment = (db, cluster, commentId, userId) => {
+    return new Promise((resolve, reject) => {
+      db.collection(cluster).findOne(
+        { _id: ObjectId(commentId), $in: { likedUserIds: userId} },
+        (error, result) => {
           if (error) {
             reject(error);
           } else if (result) {
-            resolve(result);
-          } else {
             resolve(false);
+          } else {
+            db.collection(cluster).updateOne(
+              {
+                likedUserIds: { $push: userId }
+              });
+            resolve(true)
           }
-        });
+        }
+      );
     });
   };
+  
+  //call regretLikeComment as shown beneath
+  /* 
+    callPromise(regretLikeComment(db, "image-app-comment", commentId, userId)).then(function(result) {
+      use received data here...
+    });
+  */
 
-  const getUserFeed = (db, relationshipsCluster, postsCluster, userId) => {
+  const regretLikeComment = (db, cluster, commentId, userId) => {
     return new Promise((resolve, reject) => {
-      callPromise(getFollowedUsers(db, relationshipsCluster, userId)).then(
-        function(result) {
-          if (result) {
-            let dateFilter = new Date();
-            dateFilter.setHours(dateFilter.getHours() - 6);
-            let feed = [];
-            for (let i = 0; i < result.length(); ++i) {
-              callPromise(
-                getPostsOfUser(
-                  db,
-                  postsCluster,
-                  result[i].creatorId,
-                  dateFilter
-                )
-              ).then(function(data) {
-                if (data) {
-                  resolve(data);
-                } else {
-                  resolve(false);
-                }
+      db.collection(cluster).findOne(
+        { _id: ObjectId(commentId), $in: { likedUserIds: userId } },
+        (error, result) => {
+          if (error) {
+            reject(error);
+          } else if (result) {
+            db.collection(cluster).updateOne(
+              {
+                likedUserIds: { $pull: userId }
               });
-            }
+            resolve(true)
           } else {
             resolve(false);
           }
@@ -571,6 +942,7 @@ module.exports = function(app, db, bucket) {
       );
     });
   };
+
 
   const renderWithData = (
     res,
@@ -588,6 +960,9 @@ module.exports = function(app, db, bucket) {
     return true;
   };
 
-  const sendPost = (user_id, text, picture) => {};
+  const back = (req, res) => {
+    req.session.currentURL = req.session.currentURL ? req.session.currentURL : "/"
+    res.redirect(req.session.currentURL)
+  };
   /*                                     helper methods depends on app and db added here                                    */
 };

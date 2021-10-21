@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Email App | Profile</title>
+    <title>Create New Post</title>
 
     
     <!-- import the webpage's stylesheet -->
@@ -14,5 +14,89 @@
   </head>
 
   <body>
+    <section id="nav-bar">
+      <nav class="nav justify-content-end">
+        <a class="nav-link" href="#">Home</a>
+        <a class="nav-link" href="#">New Posts</a>
+        <a class="nav-link" href="#">Top Posts</a>
+        <a class="nav-link" href="#">About</a>
+      </nav>
+    </section>
+
+    <section id="form-section" class="form-group">
+      <form id="form-section" name="post" method="post" action="/post">
+        <label for="title-input">
+          Title
+          <input
+            name="title"
+            id="title-input"
+            type="text"
+            maxlength="40"
+            class="form-control"
+          />
+        </label>
+        <br />
+        <p style="opacity:0.5" id="image-preview-title">Image Preview - <span id="no-image-note" style="font-style:italic">No image selected yet.</span></p>
+        <section id="image-preview">
+          <img id="img-preview" src="https://cdn.eso.org/images/thumb300y/eso1907a.jpg"/>
+        </section>
+        <label for="image-input">
+          Image URL
+          <input
+            name="imageURL"
+            id="image-input"
+            type="url"
+            maxlength="2083"
+            class="form-control"
+            required
+          />
+        </label>
+        <label for="context-input">
+          Context
+          <textarea
+            name="context"
+            id="context-input"
+            type="textarea"
+            class="form-control"
+            rows="2"
+            maxlength="150">
+          </textarea>
+        </label>
+        <br />
+        <button type="submit" id="post-image-url-button" class="form-control btn btn-outline-primary" style="width:50%" disabled>Post</button>
+      </form>
+    </section>
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.js"
+			    integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk="
+			    crossorigin="anonymous">
+    </script>
+    
+    <script>
+
+      $("#image-input").on("change", function(event){
+        let regex = /(\.jpg$)|(\.jpeg$)|(\.png$)/
+        if(regex.test(event.target.value)) {
+          $("#post-image-url-button").prop("disabled", true)
+          $("#img-preview").attr("src", event.target.value);
+          $("#no-image-note").text("image url is valid")
+          let status = true
+          $("#img-preview").on("error", function(img){
+            status = false
+            $("#no-image-note").text("image url is invalid")
+            event.target.value = ""
+            $("#img-preview").attr("src", "https://cdn.eso.org/images/thumb300y/eso1907a.jpg");
+          })
+          if(status){
+            $("#post-image-url-button").prop("disabled", false)
+          }
+        } else {
+          event.target.value = ""
+          $("#no-image-note").text("invalid url. make sure url ends with .jpg, .jpeg or .png")
+          $("#img-preview").attr("src", "https://cdn.eso.org/images/thumb300y/eso1907a.jpg");
+        }
+      })
+
+    </script>
   </body>
 </html>

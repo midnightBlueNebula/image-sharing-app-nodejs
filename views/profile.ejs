@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Email App | Profile</title>
+    <title>Profile</title>
 
     
     <!-- import the webpage's stylesheet -->
@@ -14,29 +14,144 @@
   </head>
 
   <body>
-    <section id="profile-card">
-    </section>
-    <section id="profile-header">
-      <header>
-        <h3 id="profile-title">
-          Profile
-        </h3>
-      </header>
-    </section>
+      <div id="nav-bar">
+        <nav class="nav justify-content-end">
+          <a class="nav-link" href="#">Home</a>
+          <a class="nav-link" href="#">New Posts</a>
+          <a class="nav-link" href="#">Top Posts</a>
+          <a class="nav-link" href="#">About</a>
+          <a class="nav-link" href="#">Settings</a>
+          <a class="nav-link" href="/logout" id="logout-button">Logout</a>
+        </nav>
+      </div>
     
-    <section id="profile-name">
-      <h1 id="profile-user-title">
-        <%= user.name %>
-      </h1>
-    </section>
+      <div class="card-group">
+        <div class="card"  id="liked-posts">
+        <img class="card-img-top" src="..." alt="">
+          <div class="card-body">
+            <h5 class="card-title" id="liked-posts">Liked Posts</h5>
+            <p class="card-text">This is a wider card with supporting text below as a natural lead-in to additional content. This content is a little bit longer.</p>
+            <p class="card-text"><small class="text-muted">Last updated 3 mins ago</small></p>
+          </div>
+        </div>
+      <div class="card"  id="profile-card">
+        <div id="view-profile">         
+          <% if(user.profileImageURL != ""){ %>
+            <img class="card-img-top" src=<%= user.profileImageURL %> alt="profile image">
+            <section id="change-image-form-group" class="form-group">
+              <form id="change-image-form" action="/changeProfileImage" method="post">
+                <button type="submit" id="change-image-button" class="form-control btn btn-outline-danger">Change Profile Image</button>  
+              </form>
+            </section>
+          <% } else { %>
+            <section id="profile-img-preview-section">
+              <img id="profile-img-preview" src="https://cdn.eso.org/images/thumb300y/eso1907a.jpg"/>
+            </section>
+            <section id="pick-profile-image" class="form-group" style="margin:auto; width:50%">
+              <p id="no-image-note" style="text-align:center">No profile picture added yet.</p>
+              <form id="pick-profile-image-form" action="/addProfileImage" method="post">
+                  <input
+                    name="imageURL"
+                    id="image-input"
+                    type="url"
+                    maxlength="2083"
+                    class="form-control"
+                    required
+                  />
+                <button type="submit" id="post-image-url-button" class="form-control btn btn-outline-primary" disabled>Add Profile Image From URL</button>
+              </form>
+            </section>
+          <% } %>
+          <div class="card-body" id="user-info">
+            <h5 class="card-title" id="profile-name" style="text-align:center; margin-top:-25px"><%= user.name %></h5>
+            <% if(user.about == ""){ %>
+              <section id="about-form-section" class="form-group">
+                <form id="about-form" action="/addProfileDescription" method="post">
+                  <textarea
+                    name="about"
+                    id="about-input"
+                    type="textarea"
+                    class="form-control"
+                    rows="2"
+                    maxlength="100"
+                    required>
+                  </textarea>
+                  <button type="submit" id="about-button" class="form-control btn btn-outline-primary">
+                    Add Profile Description
+                  </button>
+                </form>
+              </section>
+            <% } else { %>
+              <p class="card-text" id="profile-description" style="text-align:center"><%= user.about %></p>
+              <a href="/changeProfileDescription" class="form-control btn btn-outline-danger">Change Description</a>
+            <% } %>
+            <p class="card-text" id="register-date"><small class="text-muted">Joined at: <%= user.createdAt.toLocaleString() %> </small></p>
+          </div>
+        </div>
+        <p id="view-posts" class="form-control btn btn-outline-primary mt-auto sticky-top" style="margin-bottom:0px">view your posts</p>
+        <div id="profile-posts" style="display:none;">
+          <% for(var i=0; i<posts.length; ++i) { %>
+            <%- include('showPostPartial', { creator: user, post: posts[i], viewerId: user._id }); %>
+          <% } %>
+        </div>
+      </div>
+        
+      
+      
+      <div class="card"  id="feed">
+        <img class="card-img-top" src="..." alt="">
+        <div class="card-body">
+          <h5 class="card-title">Feed</h5>
+          <p class="card-text">This is a wider card with supporting text below as a natural lead-in to additional content. This card has even longer content than the first to show that equal height action.</p>
+          <p class="card-text"><small class="text-muted">Last updated 3 mins ago</small></p>
+        </div> 
+      </div>
+      </div>
+    </div>
+       
+    <script src="https://code.jquery.com/jquery-3.6.0.js"
+			    integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk="
+			    crossorigin="anonymous">
+    </script>
     
-    <section id="user-posts">
-    </section>
-    
-    <section id="user-feed">
-    </section>
-    
-    <a href="/logout" id="logout-button">Log out</a>
+    <script>
+
+      $("#image-input").on("change", function(event){
+        let regex = /(\.jpg$)|(\.jpeg$)|(\.png$)/
+        if(regex.test(event.target.value)) {
+          $("#post-image-url-button").prop("disabled", true)
+          $("#profile-img-preview").attr("src", event.target.value);
+          $("#no-image-note").text("image url is valid")
+          let status = true
+          $("#profile-img-preview").on("error", function(img){
+            status = false
+            $("#no-image-note").text("image url is invalid")
+            event.target.value = ""
+            $("#profile-img-preview").attr("src", "https://cdn.eso.org/images/thumb300y/eso1907a.jpg");
+          })
+          if(status){
+            $("#post-image-url-button").prop("disabled", false)
+          }
+        } else {
+          event.target.value = ""
+          $("#no-image-note").text("invalid url. make sure url ends with .jpg, .jpeg or .png")
+          $("#profile-img-preview").attr("src", "https://cdn.eso.org/images/thumb300y/eso1907a.jpg");
+        }
+      })
+      
+      $("#view-posts").on("click", function() {
+        if($("#view-posts").text() == "view your posts") {
+          $("#view-posts").text("view your profile")
+          $("#profile-posts").css("display", "block")
+          $("#view-profile").css("display", "none")
+        } else {
+          $("#view-posts").text("view your posts")
+          $("#view-profile").css("display", "block")
+          $("#profile-posts").css("display", "none")
+        }
+      })
+
+    </script>
   </body>
 </html>
 

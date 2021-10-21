@@ -5,20 +5,28 @@
 
 const path = require("path");
 const bodyParser = require("body-parser");
-const mongodb = require("mongodb")
+const mongodb = require("mongodb");
 const MongoClient = require("mongodb").MongoClient;
 const routes = require("./routes.js");
 const express = require("express");
 const app = express();
 
-
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(express.static("public"));
 app.engine("html", require("ejs").renderFile);
-app.use('/css', express.static(path.join(__dirname, 'node_modules/bootstrap/dist/css')))
-app.use('/js', express.static(path.join(__dirname, 'node_modules/bootstrap/dist/js')))
-app.use('/js', express.static(path.join(__dirname, 'node_modules/jquery/dist')))
+app.use(
+  "/css",
+  express.static(path.join(__dirname, "node_modules/bootstrap/dist/css"))
+);
+app.use(
+  "/js",
+  express.static(path.join(__dirname, "node_modules/bootstrap/dist/js"))
+);
+app.use(
+  "/js",
+  express.static(path.join(__dirname, "node_modules/jquery/dist"))
+);
 
 const CONNECTION_STRING = process.env.DB;
 
@@ -32,11 +40,10 @@ MongoClient.connect(
     } else {
       console.log("Connected to mongodb successfully.");
     }
-    var db = client.db("cluster0");
-    
-    const bucket = new mongodb.GridFSBucket(db, { bucketName: 'imageAppBucket' });
 
-    routes(app, db, bucket);
+    var db = client.db("cluster0");
+
+    routes(app, db);
 
     //404 Not Found Middleware
     app.use(function(req, res, next) {
