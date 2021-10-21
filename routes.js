@@ -232,6 +232,32 @@ module.exports = function(app, db) {
     })
   });
   
+  app.post("/like-post/:postId", (req, res) => {
+    if (!loggedIn(req.session.user_id)) {
+      res.redirect("/");
+    }
+    
+    const postId = req.params.postId
+    const userId = req.session.user_id
+    
+    callPromise(likePost(db, "image-app-posts", postId, userId)).then(function(result) {
+      back(req, res)
+    });
+  });
+  
+  app.post("/regret-like-post/:postId", (req, res) => {
+    if (!loggedIn(req.session.user_id)) {
+      res.redirect("/");
+    }
+    
+    const postId = req.params.postId
+    const userId = req.session.user_id
+    
+    callPromise(regretLikePost(db, "image-app-posts", postId, userId)).then(function(result) {
+      back(req, res)
+    });
+  });
+  
   app.get("/show-post/:id", (req, res) => {
     const postId = req.params.id
     req.session.currentURL = `/show-post/${postId}`
@@ -325,29 +351,78 @@ module.exports = function(app, db) {
     });
   });
   
-  
-  app.post("/like-post/:postId/:userId", (req, res) => {
+  app.post("/comment/:postId", (req, res) => {
     if (!loggedIn(req.session.user_id)) {
       res.redirect("/");
     }
+    
+    const content = h.cleanseString(req.body.content)
+    const postId = req.params.postId
+    const userId = req.session.user_id
+    
+    callPromise(createComment(db, "image-app-comments", content, postId, userId)).then(function(result) {
+      if(result){
+        if(req.session.currentURL){
+          back(req, res)
+        } else {
+          res.redirect(`/show-post/${postId}`)
+        }
+      } else {
+        res.send("failed to post comment.")
+      }
+    });
+  })
+  
+  app.delete("/comment/:commentId", (req, res) => {
+    if (!loggedIn(req.session.user_id)) {
+      res.redirect("/");
+    }
+    
+    const commentId = req.params.commentId
+    
+    callPromise(isAdmin()).then(function(admin) {
+      if(admin){
+        callPromise(deleteComment(db, "image-app-comments", commentId)).then(function(result) {
+          back(req, res)
+        });
+      } else {
+        callPromise(isCommentor()).then(function(commentor) {
+          if(commentor){
+            callPromise(deleteComment(db, "image-app-comments", commentId)).then(function(result) {
+              back(req, res)
+            });
+          } else {
+            res.redirect("/")
+          }
+        })
+      }
+    })
+  })
+  
+  app.post("/like-comment/:commentId", (req, res) => {
+    if (!loggedIn(req.session.user_id)) {
+      res.redirect("/");
+    }
+    
+    const commentId = req.params.commentId
+    const userId = req.session.user_id
+    
+    callPromise(likeComment(db, "image-app-comments", commentId, userId)).then(function(result) {
+      back(req, res)
+    });
   });
   
-  app.post("/regret-like-post/:postId/:userId", (req, res) => {
+  app.post("/regret-like-comment/:commentId", (req, res) => {
     if (!loggedIn(req.session.user_id)) {
       res.redirect("/");
     }
-  });
-  
-  app.post("/like-comment/:commentId/:userId", (req, res) => {
-    if (!loggedIn(req.session.user_id)) {
-      res.redirect("/");
-    }
-  });
-  
-  app.post("/regret-like-comment/:commentId/:userId", (req, res) => {
-    if (!loggedIn(req.session.user_id)) {
-      res.redirect("/");
-    }
+    
+    const commentId = req.params.commentId
+    const userId = req.session.user_id
+    
+    callPromise(regretLikeComment(db, "image-app-comments", commentId, userId)).then(function(result) {
+      back(req, res)
+    });
   });
 
   /*                                     helper methods depends on app and db added here                                    */
@@ -794,6 +869,26 @@ module.exports = function(app, db) {
     })
   }
   
+  //call deleteComment as shown beneath
+  /* 
+    callPromise(deleteComment(db, "image-app-comments", commentId)).then(function(result) {
+      use received data here...
+    });
+  */
+  
+  const deleteComment = (db, cluster, commentId) => {
+    return new Promise((resolve, reject) => {
+      db.collection(cluster)
+        .deleteOne({ _id: ObjectId(commentId) }, (error, result) => {
+          if(error){
+            reject(error)
+          } else {
+            resolve(true)
+          }
+        })
+    })
+  }
+  
   //call getCommentById as shown beneath
   /* 
     callPromise(getCommentById(db, "image-app-comments", commentId)).then(function(result) {
@@ -808,6 +903,29 @@ module.exports = function(app, db) {
           reject(error)
         } else if(result) {
           resolve(result)
+        } else {
+          resolve(false)
+        }
+      })
+    })
+  }
+  
+  //call isCommentor
+  /* 
+    callPromise(isCommentor(db, "image-app-comments", commentId, userId)).then(function(result) {
+      use received data here...
+    });
+  */
+  
+  const isCommentor = (db, cluster, commentId, userId) => {
+    return new Promise((resolve, reject) => {
+      callPromise(getCommentById(db, cluster, commentId)).then(function(comment) {
+        if(comment){
+          if(userId == comment.userId) {
+            resolve(true)
+          } else {
+            resolve(false)
+          }
         } else {
           resolve(false)
         }
@@ -917,7 +1035,7 @@ module.exports = function(app, db) {
   
   //call regretLikeComment as shown beneath
   /* 
-    callPromise(regretLikeComment(db, "image-app-comment", commentId, userId)).then(function(result) {
+    callPromise(regretLikeComment(db, "image-app-comments", commentId, userId)).then(function(result) {
       use received data here...
     });
   */
