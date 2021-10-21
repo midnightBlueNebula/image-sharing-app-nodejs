@@ -379,6 +379,7 @@ module.exports = function(app, db) {
     }
     
     const commentId = req.params.commentId
+    const userId = req.session.user_ıd
     
     callPromise(isAdmin()).then(function(admin) {
       if(admin){
@@ -386,7 +387,7 @@ module.exports = function(app, db) {
           back(req, res)
         });
       } else {
-        callPromise(isCommentor()).then(function(commentor) {
+        callPromise(isCommentor(db, "image-app-comments", commentId, userId)).then(function(commentor) {
           if(commentor){
             callPromise(deleteComment(db, "image-app-comments", commentId)).then(function(result) {
               back(req, res)
