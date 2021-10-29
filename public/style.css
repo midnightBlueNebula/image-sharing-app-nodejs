@@ -1,3 +1,7 @@
+.card-body{
+  z-index: 5000;
+}
+
 textarea{
   resize: none !important;
 }
@@ -34,7 +38,7 @@ textarea{
 
 #post-title{
   color: white;
-  text-shadow: 5px 5px 2px black;
+  text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;
   text-align: center;
   -webkit-text-stroke: black
 }
@@ -80,4 +84,5 @@ textarea{
   width: 33%;
   margin: auto;
 }
+
 

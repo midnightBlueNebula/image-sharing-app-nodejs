@@ -14,16 +14,7 @@
   </head>
 
   <body>
-      <div id="nav-bar">
-        <nav class="nav justify-content-end">
-          <a class="nav-link" href="#">Home</a>
-          <a class="nav-link" href="#">New Posts</a>
-          <a class="nav-link" href="#">Top Posts</a>
-          <a class="nav-link" href="#">About</a>
-          <a class="nav-link" href="#">Settings</a>
-          <a class="nav-link" href="/logout" id="logout-button">Logout</a>
-        </nav>
-      </div>
+      <%- include('navPartial', {viewerId: viewerId}) %>
     
       <div class="card-group">
         <div class="card"  id="liked-posts">
@@ -116,7 +107,7 @@
     
     <script>
 
-      $("#image-input").on("change", function(event){
+      $("#image-input").on("input", function(event){
         let regex = /(\.jpg$)|(\.jpeg$)|(\.png$)/
         if(regex.test(event.target.value)) {
           $("#post-image-url-button").prop("disabled", true)
@@ -140,7 +131,7 @@
       })
       
       $("#view-posts").on("click", function() {
-        if($("#view-posts").text() == "view your posts") {
+        if($("#profile-posts").css("display") == "none") {
           $("#view-posts").text("view your profile")
           $("#profile-posts").css("display", "block")
           $("#view-profile").css("display", "none")
