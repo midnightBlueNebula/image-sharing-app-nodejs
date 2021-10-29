@@ -14,26 +14,47 @@
   </head>
 
   <body>
-    <div id="nav-bar">
-      <nav class="nav justify-content-end">
-        <a class="nav-link" href="#">Home</a>
-        <a class="nav-link" href="#">New Posts</a>
-        <a class="nav-link" href="#">Top Posts</a>
-        <a class="nav-link" href="#">About</a>
-        <a class="nav-link" href="#">Settings</a>
-      <% if(viewerId){ %>
-        <a class="nav-link" href="/logout" id="logout-button">Logout</a>
-      <% } else { %>
-        <a class="nav-link" href="/" id="login-button">Login</a>
-      <% } %>
-      </nav>
-    </div>
+    <%- include('navPartial', {viewerId: viewerId}) %>
+    
     <div id="show-posts-div">
       <% for(var i = 0; i<data.length; ++i){ %>
         <%- include('showPostPartial', {creator: data[i].creator, post: data[i].post, viewerId: viewerId}); %>
       <% } %>  
     </div>
   </body>
+  
+  <script src="https://code.jquery.com/jquery-3.6.0.js"
+			    integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk="
+			    crossorigin="anonymous">
+  </script>
+  
+  <script>
+    $(".like").on("click", function(event){
+      $.post(`/like-post/${(event.target.id).replace("like-post-", "")}`, function(data){
+        if(data){
+          event.target.id = event.target.id.replace("like", "liked")
+          event.target.className = event.target.className.replace("like", "liked")
+          $(`post-likes-${data._id}`)
+            .text(`${data.likedUserIds.length} ${data.likedUserIds.length > 1 ? "likes" : "like"}`)
+        } else {
+          
+        }
+      })
+    })
+    
+    $(".liked").on("click", function(event){
+      $.post(`/regret-like-post/${(event.target.id).replace("liked-post-", "")}`, function(data){
+        if(data){
+          event.target.id = event.target.id.replace("liked", "like")
+          event.target.className = event.target.className.replace("liked", "like")
+          $(`post-likes-${data._id}`)
+            .text(`${data.likedUserIds.length} ${data.likedUserIds.length > 1 ? "likes" : "like"}`)
+        } else {
+          
+        }
+      })
+    })
+  </script>
 </html>
 
 

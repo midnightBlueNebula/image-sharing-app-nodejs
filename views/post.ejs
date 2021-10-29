@@ -14,14 +14,7 @@
   </head>
 
   <body>
-    <section id="nav-bar">
-      <nav class="nav justify-content-end">
-        <a class="nav-link" href="#">Home</a>
-        <a class="nav-link" href="#">New Posts</a>
-        <a class="nav-link" href="#">Top Posts</a>
-        <a class="nav-link" href="#">About</a>
-      </nav>
-    </section>
+    <%- include('navPartial', {viewerId: viewerId}) %>
 
     <section id="form-section" class="form-group">
       <form id="form-section" name="post" method="post" action="/post">
@@ -74,7 +67,7 @@
     
     <script>
 
-      $("#image-input").on("change", function(event){
+      $("#image-input").on("input", function(event){
         let regex = /(\.jpg$)|(\.jpeg$)|(\.png$)/
         if(regex.test(event.target.value)) {
           $("#post-image-url-button").prop("disabled", true)

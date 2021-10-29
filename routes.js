@@ -112,7 +112,7 @@ module.exports = function(app, db) {
 
   app.get("/logout", (req, res) => {
     req.session.user_id = undefined;
-    res.redirect("/");
+    back(req, res)
   });
 
   app.get("/profile", (req, res) => {
@@ -120,10 +120,12 @@ module.exports = function(app, db) {
     if (!loggedIn(id)) {
       res.redirect("/");
     }
+    
+    session.currentURL = "/profile"
 
     callPromise(getUserById(db, "image-app-users", id)).then(function(user) {
       callPromise(getPostsOfUser(db, "image-app-posts", ""+user._id+"")).then(function(posts) {
-        renderWithData(res, "profile.ejs", { user: user, posts: posts });
+        renderWithData(res, "profile.ejs", { user: user, posts: posts, viewerId: user._id.toString() });
       });
     });
   });
@@ -184,7 +186,7 @@ module.exports = function(app, db) {
     const id = req.session.user_id
     
     callPromise(getUserById(db, "image-app-users", id)).then(function(result) {
-      renderWithData(res, "post.ejs", { user: result });
+      renderWithData(res, "post.ejs", { user: result, viewerId: result._id.toString() });
     });
   });
 
@@ -204,7 +206,7 @@ module.exports = function(app, db) {
     });
   });
 
-  app.delete("/post/:id", (req, res) => {
+  app.get("/delete-post/:id", (req, res) => {
     if (!loggedIn(req.session.user_id)) {
       res.redirect("/");
     }
@@ -241,7 +243,7 @@ module.exports = function(app, db) {
     const userId = req.session.user_id
     
     callPromise(likePost(db, "image-app-posts", postId, userId)).then(function(result) {
-      back(req, res)
+      res(result)
     });
   });
   
@@ -254,7 +256,7 @@ module.exports = function(app, db) {
     const userId = req.session.user_id
     
     callPromise(regretLikePost(db, "image-app-posts", postId, userId)).then(function(result) {
-      back(req, res)
+      res(result)
     });
   });
   
@@ -373,7 +375,7 @@ module.exports = function(app, db) {
     });
   })
   
-  app.delete("/comment/:commentId", (req, res) => {
+  app.get("/delete-comment/:commentId", (req, res) => {
     if (!loggedIn(req.session.user_id)) {
       res.redirect("/");
     }
@@ -381,7 +383,7 @@ module.exports = function(app, db) {
     const commentId = req.params.commentId
     const userId = req.session.user_ıd
     
-    callPromise(isAdmin()).then(function(admin) {
+    callPromise(isAdmin(db, "image-app-users", userId)).then(function(admin) {
       if(admin){
         callPromise(deleteComment(db, "image-app-comments", commentId)).then(function(result) {
           back(req, res)
@@ -409,7 +411,7 @@ module.exports = function(app, db) {
     const userId = req.session.user_id
     
     callPromise(likeComment(db, "image-app-comments", commentId, userId)).then(function(result) {
-      back(req, res)
+      res(result)
     });
   });
   
@@ -422,7 +424,7 @@ module.exports = function(app, db) {
     const userId = req.session.user_id
     
     callPromise(regretLikeComment(db, "image-app-comments", commentId, userId)).then(function(result) {
-      back(req, res)
+      res(result)
     });
   });
 
@@ -610,19 +612,17 @@ module.exports = function(app, db) {
 
   const likePost = (db, cluster, postId, userId) => {
     return new Promise((resolve, reject) => {
-      db.collection(cluster).findOne(
+      db.collection(cluster).findOneAndUpdate(
         { _id: ObjectId(postId), $in: { likedUserIds: userId} },
+        { likedUserIds: { $push: userId } },
+        { returnOriginal: false },
         (error, result) => {
           if (error) {
             reject(error);
           } else if (result) {
-            resolve(false);
+            resolve(result);
           } else {
-            db.collection(cluster).updateOne(
-              {
-                likedUserIds: { $push: userId }
-              });
-            resolve(true)
+            resolve(false)
           }
         }
       );
@@ -638,19 +638,17 @@ module.exports = function(app, db) {
 
   const regretLikePost = (db, cluster, postId, userId) => {
     return new Promise((resolve, reject) => {
-      db.collection(cluster).findOne(
-        { _id: ObjectId(postId), $in: { likedUserIds: userId } },
+      db.collection(cluster).findOneAndUpdate(
+        { _id: ObjectId(postId), $in: { likedUserIds: userId} },
+        { likedUserIds: { $pull: userId } },
+        { returnOriginal: false },
         (error, result) => {
           if (error) {
             reject(error);
           } else if (result) {
-            db.collection(cluster).updateOne(
-              {
-                likedUserIds: { $pull: userId }
-              });
-            resolve(true)
+            resolve(result);
           } else {
-            resolve(false);
+            resolve(false)
           }
         }
       );
@@ -1015,19 +1013,17 @@ module.exports = function(app, db) {
 
   const likeComment = (db, cluster, commentId, userId) => {
     return new Promise((resolve, reject) => {
-      db.collection(cluster).findOne(
+      db.collection(cluster).findOneAndUpdate(
         { _id: ObjectId(commentId), $in: { likedUserIds: userId} },
+        { likedUserIds: { $push: userId } },
+        { returnOriginal: false },
         (error, result) => {
           if (error) {
             reject(error);
           } else if (result) {
-            resolve(false);
+            resolve(result);
           } else {
-            db.collection(cluster).updateOne(
-              {
-                likedUserIds: { $push: userId }
-              });
-            resolve(true)
+            resolve(false)
           }
         }
       );
@@ -1043,19 +1039,17 @@ module.exports = function(app, db) {
 
   const regretLikeComment = (db, cluster, commentId, userId) => {
     return new Promise((resolve, reject) => {
-      db.collection(cluster).findOne(
-        { _id: ObjectId(commentId), $in: { likedUserIds: userId } },
+      db.collection(cluster).findOneAndUpdate(
+        { _id: ObjectId(commentId), $in: { likedUserIds: userId} },
+        { likedUserIds: { $push: userId } },
+        { returnOriginal: false },
         (error, result) => {
           if (error) {
             reject(error);
           } else if (result) {
-            db.collection(cluster).updateOne(
-              {
-                likedUserIds: { $pull: userId }
-              });
-            resolve(true)
+            resolve(result);
           } else {
-            resolve(false);
+            resolve(false)
           }
         }
       );

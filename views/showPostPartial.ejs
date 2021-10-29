@@ -13,26 +13,26 @@
       <%= creator.name %>
     </div>
     <div class="col-lg" style="width:300px">
-      <%= post.createdAt.toLocaleString() %>
+      <%= post.createdAt.toLocaleDateString("tr-TR", {day: "2-digit", month: "short", year:"numeric", hour12: false, hour: "numeric", minute: "numeric", second: "numeric"}) %>
     </div>
   </div>
   <div class="card-body" style="margin:auto; padding-bottom:1px">
-      <a class="card-link"><%= post.likedUserIds.length %> <%= post.likedUserIds.length > 1 ? "likes" : "like" %></a>
-      <a class="card-link"><%= post.commentIds.length %> <%= post.commentIds.length > 1 ? "comments" : "comment" %></a>
+      <a id="post-likes-<%= post._id %>" class="card-link likes-count"><%= post.likedUserIds.length %> <%= post.likedUserIds.length > 1 ? "likes" : "like" %></a>
+      <a id="post-comments-<%= post._id %>" class="card-link comments-count"><%= post.commentIds.length %> <%= post.commentIds.length > 1 ? "comments" : "comment" %></a>
     </div>
   <% if(viewerId && viewerId != creator._id.toString() && post.likedUserIds.indexOf(viewerId) == -1) { %>
-    <div class="card-body like-comment-div" style="margin:auto; padding-bottom:1px">
-      <p class="card-link like">Like</p>
-      <p class="card-link comment">Comment</p>
+    <div class="card-body like-and-comment-div" style="margin:auto; padding-bottom:1px">
+      <p id="like-post-<%= post._id %>" class="card-link like-post" style="display:inline-block">Like</p>
+      <p id="comment-<%= post._id %>"class="card-link comment" style="display:inline-block">Comment</p>
     </div>
   <% } else if(viewerId && viewerId == creator._id.toString()) { %>
     <div class="card-body remove-post-div" style="margin:auto; padding-bottom:1px">
-      <a href="" class="card-link">Remove Post</a>
+      <a href="/delete-post/<%= post._id %>" class="card-link">Remove Post</a>
     </div>  
   <% } else if(viewerId && post.likedUserIds.indexOf(viewerId) != -1) { %>
-    <div class="card-body like-comment-div" style="margin:auto; padding-bottom:1px">
-      <p class="card-link liked">Liked</p>
-      <p class="card-link comment">Comment</p>
+    <div class="card-body like-and-comment-div" style="margin:auto; padding-bottom:1px">
+      <p id="liked-post-<%= post._id %>" class="card-link liked-post">Liked</p>
+      <p id="comment-<%= post._id %>" class="card-link comment">Comment</p>
     </div>
   <% } else { %>
     <div class="card-body" style="text-align:center; padding-bottom:1px">
