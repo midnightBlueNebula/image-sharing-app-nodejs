@@ -124,8 +124,13 @@ module.exports = function(app, db) {
     session.currentURL = "/profile"
 
     callPromise(getUserById(db, "image-app-users", id)).then(function(user) {
-      callPromise(getPostsOfUser(db, "image-app-posts", ""+user._id+"")).then(function(posts) {
-        renderWithData(res, "profile.ejs", { user: user, posts: posts, viewerId: user._id.toString() });
+      callPromise(getPostsOfUser(db, "image-app-posts", user._id.toString())).then(function(posts) {
+        callPromise(getLikedPostsByUser(db, "image-app-posts", user._id.toString())).then(function(likedPosts) {
+          renderWithData(res, "profile.ejs", { user: user, 
+                                               posts: posts, 
+                                               likedPosts: likedPosts,
+                                               viewerId: user._id.toString() });
+        });
       });
     });
   });
@@ -243,7 +248,9 @@ module.exports = function(app, db) {
     const userId = req.session.user_id
     
     callPromise(likePost(db, "image-app-posts", postId, userId)).then(function(result) {
-      res(result)
+      res.json(result)
+    }).catch(function(error){
+      res.json(error.message)
     });
   });
   
@@ -256,7 +263,9 @@ module.exports = function(app, db) {
     const userId = req.session.user_id
     
     callPromise(regretLikePost(db, "image-app-posts", postId, userId)).then(function(result) {
-      res(result)
+      res.json(result)
+    }).catch(function(error){
+      res.json(error.message)
     });
   });
   
@@ -285,31 +294,9 @@ module.exports = function(app, db) {
   
     callPromise(getPostsByDate(db, "image-app-posts", date)).then(function(posts) {
       if(posts){
-        let data = []
-        let userIds = []
-        
-        posts.forEach((el) => {
-          if(userIds.indexOf(ObjectId(el.creatorId)) == -1) {
-            userIds.push(ObjectId(el.creatorId))
-          }
-        })
-        
-        callPromise(getUserByIds(db, "image-app-users", userIds)).then(function(users) {
-            if(users) {
-              users.forEach((user) => {
-                let userPosts = posts.filter((el) => el.creatorId == user._id.toString())
-                
-                userPosts.forEach((post) => {
-                  data.push({ post: post, creator: user })
-                })
-              })
-         
-              renderWithData(res, "showPosts.ejs", { data: data.sort((a,b) => b.post.createdAt - a.post.createdAt), 
-                                                     viewerId: req.session.user_id });
-            } else {
-              res.send("/no data available")
-            }
-        }) 
+        var data = []
+        getCreatorPerPostThenRender(renderWithData, res, "showPosts.ejs", 
+                                    { viewerId: req.session.user_id }, posts, 0, data)
       } else {
         res.send("/no data available")
       }
@@ -322,31 +309,9 @@ module.exports = function(app, db) {
     
     callPromise(getPostsByDate(db, "image-app-posts", date)).then(function(posts) {
       if(posts){
-        let data = []
-        let userIds = []
-        
-        posts.forEach((el) => {
-          if(userIds.indexOf(ObjectId(el.creatorId)) == -1) {
-            userIds.push(ObjectId(el.creatorId))
-          }
-        })
-        
-        callPromise(getUserByIds(db, "image-app-users", userIds)).then(function(users) {
-            if(users) {
-              users.forEach((user) => {
-                let userPosts = posts.filter((el) => el.creatorId == user._id.toString())
-                
-                userPosts.forEach((post) => {
-                  data.push({ post: post, creator: user })
-                })
-              })
-         
-              renderWithData(res, "showPosts.ejs", { data: data.sort((a,b) => b.post.likedUserIds.length - a.post.likedUserIds.length), 
-                                                     viewerId: req.session.user_id });
-            } else {
-              res.send("/no data available")
-            }
-        }) 
+        var data = []
+        getCreatorPerPostThenRender(renderWithData, res, "showPosts.ejs", 
+                                    { viewerId: req.session.user_id }, posts, 0, data)
       } else {
         res.send("/no data available")
       }
@@ -427,6 +392,15 @@ module.exports = function(app, db) {
       res(result)
     });
   });
+  
+  app.get("/test", (req, res) => {
+    var data = []
+    
+    callPromise(getTopLikedPosts(db, "image-app-posts", new Date("2020-01-01")).then(function(posts){
+      
+    }))
+  })
+  
 
   /*                                     helper methods depends on app and db added here                                    */
 
@@ -566,7 +540,7 @@ module.exports = function(app, db) {
   
   const getPostsByTags = (db, cluster, tags) => {
     return new Promise((resolve, reject) => {
-      db.collection(cluster).find( { tags: { $elemMatch: { tags } } })
+      db.collection(cluster).find( { tags: tags })
                             .sort({ createdAt: -1 })
                             .toArray((error, result) => {
         if(error) {
@@ -613,14 +587,14 @@ module.exports = function(app, db) {
   const likePost = (db, cluster, postId, userId) => {
     return new Promise((resolve, reject) => {
       db.collection(cluster).findOneAndUpdate(
-        { _id: ObjectId(postId), $in: { likedUserIds: userId} },
-        { likedUserIds: { $push: userId } },
+        { _id: ObjectId(postId), likedUserIds: { $ne: userId } },
+        { $push: { likedUserIds: userId } },
         { returnOriginal: false },
         (error, result) => {
           if (error) {
             reject(error);
           } else if (result) {
-            resolve(result);
+            resolve(result)
           } else {
             resolve(false)
           }
@@ -639,8 +613,8 @@ module.exports = function(app, db) {
   const regretLikePost = (db, cluster, postId, userId) => {
     return new Promise((resolve, reject) => {
       db.collection(cluster).findOneAndUpdate(
-        { _id: ObjectId(postId), $in: { likedUserIds: userId} },
-        { likedUserIds: { $pull: userId } },
+        { _id: ObjectId(postId), likedUserIds: userId },
+        { $pull: { likedUserIds: userId } },
         { returnOriginal: false },
         (error, result) => {
           if (error) {
@@ -665,8 +639,7 @@ module.exports = function(app, db) {
   const getLikedPostsByUser = (db, cluster, userId) => {
     return new Promise((resolve, reject) => {
       db.collection(cluster)
-        .find({$in: { likedUserIds: userId } })
-        .sort({ createdAt: -1 })
+        .find({ likedUserIds: userId })
         .toArray((error, result) => {
           if (error) {
             reject(error);
@@ -745,6 +718,7 @@ module.exports = function(app, db) {
     return new Promise((resolve, reject) => {
       db.collection(cluster)
         .find({ createdAt: { $gte: date } })
+        .sort({ createdAt: -1 })
         .toArray((error, result) => {
           if(error) {
             reject(error)
@@ -779,6 +753,23 @@ module.exports = function(app, db) {
           }
         })
     })
+  }
+  
+  //call getCreatorPerPostThenRender as shown beneath
+  /* 
+    getCreatorPerPostThenRender(renderWithData, res, "page.ejs", { renderWithData: argsToPage }, posts, index, data)
+  */
+  
+  const getCreatorPerPostThenRender = (renderCall, response, renderView, renderOpts, posts, index, data) => {
+    if(posts[index]){
+      callPromise(getUserById(db, "image-app-users", posts[index].creatorId)).then(function(creator){
+        data.push({ post: posts[index], creator: creator })
+        getCreatorPerPostThenRender(renderCall, response, renderView, renderOpts, posts, ++index, data)
+      })
+    } else {
+      renderOpts.data = data
+      renderCall(response, renderView, renderOpts)
+    }
   }
   
 

@@ -1,9 +1,21 @@
+body{
+  overflow: visible;
+}
+
+.card-group{
+  height: 80vh;
+}
+
 .card-body{
   z-index: 5000;
 }
 
 textarea{
   resize: none !important;
+}
+
+#view-profile{
+  height: 100vh;
 }
 
 #form-section {
@@ -31,25 +43,25 @@ textarea{
   height: 50vh;
 }
 
-#post-image{
+.post-image{
   width: 100%;
   height: 50vh;
 }
 
-#post-title{
+.post-title{
   color: white;
   text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;
   text-align: center;
   -webkit-text-stroke: black
 }
 
-#post-context{
+.post-context{
   text-align:center;
 }
 
 #profile-card{
   overflow-y: scroll;
-  height: 650px;
+  height: 85vh;
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
@@ -60,7 +72,7 @@ textarea{
 
 #liked-posts{
   overflow-y: scroll;
-  height: 650px;
+  height: 85vh;
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
@@ -71,7 +83,7 @@ textarea{
 
 #feed{
   overflow-y: scroll;
-  height: 650px;
+  height: 85vh;
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
@@ -80,9 +92,24 @@ textarea{
   display: none;
 }
 
+#show-posts-page{
+  
+}
+
+.post-card{
+  height: 50%;
+}
+
+#posts-div{
+  height: 90vh;
+  overflow-y: scroll;
+}
+
 #show-posts-div{
   width: 33%;
   margin: auto;
 }
 
-
+.liked-post{
+  color: #FF00FF;
+}

@@ -79,7 +79,7 @@
             <p class="card-text" id="register-date"><small class="text-muted">Joined at: <%= user.createdAt.toLocaleString() %> </small></p>
           </div>
         </div>
-        <p id="view-posts" class="form-control btn btn-outline-primary mt-auto sticky-top" style="margin-bottom:0px">view your posts</p>
+        <p id="view-posts" class="form-control btn btn-primary mt-auto sticky-top" style="margin-bottom:0px; z-index:10000">view your posts</p>
         <div id="profile-posts" style="display:none;">
           <% for(var i=0; i<posts.length; ++i) { %>
             <%- include('showPostPartial', { creator: user, post: posts[i], viewerId: user._id }); %>

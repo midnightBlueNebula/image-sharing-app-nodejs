@@ -14,12 +14,15 @@
   </head>
 
   <body>
-    <%- include('navPartial', {viewerId: viewerId}) %>
-    
-    <div id="show-posts-div">
-      <% for(var i = 0; i<data.length; ++i){ %>
-        <%- include('showPostPartial', {creator: data[i].creator, post: data[i].post, viewerId: viewerId}); %>
-      <% } %>  
+    <div id="show-posts-page">
+      <%- include('navPartial', {viewerId: viewerId}) %>
+      <div id="posts-div">
+        <div id="show-posts-div">
+          <% for(var i = 0; i<data.length; ++i){ %>
+            <%- include('showPostPartial', {creator: data[i].creator, post: data[i].post, viewerId: viewerId}); %>
+          <% } %>  
+        </div>
+      </div>
     </div>
   </body>
   
@@ -29,31 +32,71 @@
   </script>
   
   <script>
-    $(".like").on("click", function(event){
-      $.post(`/like-post/${(event.target.id).replace("like-post-", "")}`, function(data){
-        if(data){
-          event.target.id = event.target.id.replace("like", "liked")
-          event.target.className = event.target.className.replace("like", "liked")
-          $(`post-likes-${data._id}`)
-            .text(`${data.likedUserIds.length} ${data.likedUserIds.length > 1 ? "likes" : "like"}`)
-        } else {
-          
-        }
-      })
+    $(".like-post").on("click", function(event){
+      if(!$(this).attr("class").includes("liked-post")){
+        $(this).toggleClass("liked-post")
+        $(this).text("Liked")
+        
+        const url = `https://image-sharing-with-mongodb.glitch.me/like-post/${(event.target.id).replace("like-post-", "")}`
+        $.post(url).done(function(result, status){
+          if(result){
+            const data = JSON.parse(result)
+            alert(data._id)
+            alert(data.likedUserIds.length)
+            event.target.id = event.target.id.replace("like", "liked")
+            $(`#post-likes-${data._id}`)
+              .text(`${data.likedUserIds.length} ${data.likedUserIds.length > 1 ? "likes" : "like"}`)
+          } else {
+            $("#show-post-div").append("div id='alert-box'>failed to like</div>")
+            $("#alert-box").css({
+              "border": "1px solid red",
+              "color": "red",
+              "height": "25px",
+              "width": "100px",
+              "margin": "auto"
+            })
+            
+            setTimeout(function(){
+              $("#alert-box").remove()
+            }, 2000)
+          }
+        }).fail(function(xhr, status, error){
+          alert("fail")
+          alert("Result: " + status + " " + error + " " + xhr.status + " " + xhr.statusText)
+        })
+      } else {
+        $(this).toggleClass("liked-post")
+        $(this).text("Like")
+        
+        const url = `https://image-sharing-with-mongodb.glitch.me/regret-like-post/${(event.target.id).replace("liked-post-", "")}`
+        $.post(url).done(function(data, status){
+          if(data){
+            event.target.id = event.target.id.replace("liked", "like")
+            $(`#post-likes-${data._id}`)
+              .text(`${data.likedUserIds.length} ${data.likedUserIds.length > 1 ? "likes" : "like"}`)
+          } else {
+            $("#show-post-div").append("div id='alert-box'>failed to retract like</div>")
+            $("#alert-box").css({
+              "border": "1px solid red",
+              "color": "red",
+              "height": "25px",
+              "width": "100px",
+              "margin": "auto"
+            })
+            
+            setTimeout(function(){
+              $("#alert-box").remove()
+            }, 2000)
+          }
+        }).fail(function(xhr, status, error){
+          alert("fail")
+          alert("Result: " + status + " " + error + " " + xhr.status + " " + xhr.statusText)
+        })
+      }
+      
     })
     
-    $(".liked").on("click", function(event){
-      $.post(`/regret-like-post/${(event.target.id).replace("liked-post-", "")}`, function(data){
-        if(data){
-          event.target.id = event.target.id.replace("liked", "like")
-          event.target.className = event.target.className.replace("liked", "like")
-          $(`post-likes-${data._id}`)
-            .text(`${data.likedUserIds.length} ${data.likedUserIds.length > 1 ? "likes" : "like"}`)
-        } else {
-          
-        }
-      })
-    })
+    
   </script>
 </html>
 
