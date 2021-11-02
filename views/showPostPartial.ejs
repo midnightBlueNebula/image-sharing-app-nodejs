@@ -1,13 +1,13 @@
-<div class="card" id="post-card" style="width: 100%; margin:auto;"> 
+<div class="card post-card" id="post-card-<%= post._id %>" style="width: 100%; margin:auto;"> 
       
-  <img class="card-img-top" id="post-image" src=<%= post.imageURL %>>
+  <img class="card-img-top post-image" id="post-image-<%= post._id %>" src=<%= post.imageURL %>>
   <div class="card-img-overlay">
-    <h5 class="card-title" id="post-title"><%= post.title %></h5>
+    <h5 class="card-title post-title" id="post-title-<%= post._id %>"><%= post.title %></h5>
   </div>
   <div class="card-body">
-    <p class="card-text" id="post-context"><%= post.context %></p>
+    <p class="card-text post-context" id="post-context-<%= post._id %>"><%= post.context %></p>
   </div>
-    <hr/>
+  <hr/>
   <div class="row" id="username-date-row" style="margin:auto;">
     <div class="col-lg">
       <%= creator.name %>
@@ -16,31 +16,26 @@
       <%= post.createdAt.toLocaleDateString("tr-TR", {day: "2-digit", month: "short", year:"numeric", hour12: false, hour: "numeric", minute: "numeric", second: "numeric"}) %>
     </div>
   </div>
-  <div class="card-body" style="margin:auto; padding-bottom:1px">
-      <a id="post-likes-<%= post._id %>" class="card-link likes-count"><%= post.likedUserIds.length %> <%= post.likedUserIds.length > 1 ? "likes" : "like" %></a>
-      <a id="post-comments-<%= post._id %>" class="card-link comments-count"><%= post.commentIds.length %> <%= post.commentIds.length > 1 ? "comments" : "comment" %></a>
-    </div>
+  <hr />
   <% if(viewerId && viewerId != creator._id.toString() && post.likedUserIds.indexOf(viewerId) == -1) { %>
-    <div class="card-body like-and-comment-div" style="margin:auto; padding-bottom:1px">
-      <p id="like-post-<%= post._id %>" class="card-link like-post" style="display:inline-block">Like</p>
-      <p id="comment-<%= post._id %>"class="card-link comment" style="display:inline-block">Comment</p>
+    <div class="card-body like-and-comment-div" style="margin:auto; display:inline-block">
+      <a id="like-post-<%= post._id %>" class="card-link like-post" style="display:inline-block">Like</a>
+      <a id="comment-<%= post._id %>"class="card-link comment" style="display:inline-block">Comment</a>
     </div>
   <% } else if(viewerId && viewerId == creator._id.toString()) { %>
-    <div class="card-body remove-post-div" style="margin:auto; padding-bottom:1px">
+    <div class="card-body users-like-comment-remove-post-div" style="margin: auto">
+      <a id="post-likes-<%= post._id %>" class="card-link likes-count"><%= post.likedUserIds.length %> <%= post.likedUserIds.length > 1 ? "likes" : "like" %></a>
+      <a id="post-comments-<%= post._id %>" class="card-link comments-count"><%= post.commentIds.length %> <%= post.commentIds.length > 1 ? "comments" : "comment" %></a>
       <a href="/delete-post/<%= post._id %>" class="card-link">Remove Post</a>
     </div>  
   <% } else if(viewerId && post.likedUserIds.indexOf(viewerId) != -1) { %>
     <div class="card-body like-and-comment-div" style="margin:auto; padding-bottom:1px">
-      <p id="liked-post-<%= post._id %>" class="card-link liked-post">Liked</p>
-      <p id="comment-<%= post._id %>" class="card-link comment">Comment</p>
+      <p id="liked-post-<%= post._id %>" class="card-link like-post liked-post" style="display:inline-block">Liked</p>
+      <p id="comment-<%= post._id %>" class="card-link comment" style="display:inline-block">Comment</p>
     </div>
   <% } else { %>
     <div class="card-body" style="text-align:center; padding-bottom:1px">
       <a href="/register" class="card-link">Register now to like and comment on posts & follow your favorite users!</a>
     </div>
   <% } %>
-  <hr/>
-  <div class="card-body" style="text-align:center; padding-top:1px">
-    <a href="#" class="card-link">View Comments</a>
-  </div>
 </div>
