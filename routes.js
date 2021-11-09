@@ -126,10 +126,11 @@ module.exports = function(app, db) {
     callPromise(getUserById(db, "image-app-users", id)).then(function(user) {
       callPromise(getPostsOfUser(db, "image-app-posts", user._id.toString())).then(function(posts) {
         callPromise(getLikedPostsByUser(db, "image-app-posts", user._id.toString())).then(function(likedPosts) {
-          renderWithData(res, "profile.ejs", { user: user, 
-                                               posts: posts, 
-                                               likedPosts: likedPosts,
-                                               viewerId: user._id.toString() });
+          getCreatorPerPostThenRender(renderWithData, res, "profile.ejs", 
+                                      { user: user, 
+                                        posts: posts, 
+                                        viewerId: user._id.toString() }, 
+                                      likedPosts, 0, [])
         });
       });
     });
@@ -393,14 +394,6 @@ module.exports = function(app, db) {
     });
   });
   
-  app.get("/test", (req, res) => {
-    var data = []
-    
-    callPromise(getTopLikedPosts(db, "image-app-posts", new Date("2020-01-01")).then(function(posts){
-      
-    }))
-  })
-  
 
   /*                                     helper methods depends on app and db added here                                    */
 
@@ -640,6 +633,7 @@ module.exports = function(app, db) {
     return new Promise((resolve, reject) => {
       db.collection(cluster)
         .find({ likedUserIds: userId })
+        .sort({ createdAt: -1 })
         .toArray((error, result) => {
           if (error) {
             reject(error);

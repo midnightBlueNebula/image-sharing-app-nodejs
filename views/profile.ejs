@@ -18,12 +18,12 @@
     
       <div class="card-group">
         <div class="card"  id="liked-posts">
-        <img class="card-img-top" src="..." alt="">
-          <div class="card-body">
-            <h5 class="card-title" id="liked-posts">Liked Posts</h5>
-            <p class="card-text">This is a wider card with supporting text below as a natural lead-in to additional content. This content is a little bit longer.</p>
-            <p class="card-text"><small class="text-muted">Last updated 3 mins ago</small></p>
-          </div>
+          <h5 id="liked-posts-title" class="btn card-title mt-auto sticky-top">Liked Posts</h5>
+            <% for(var i=0; i<data.length; ++i) { %>
+              <div class="liked-posts-div">
+                <%- include('showPostPartial', { creator: data[i].creator, post: data[i].post, viewerId: user._id }); %>
+              </div>
+            <% } %>
         </div>
       <div class="card"  id="profile-card">
         <div id="view-profile">         
@@ -31,7 +31,7 @@
             <img class="card-img-top" src=<%= user.profileImageURL %> alt="profile image">
             <section id="change-image-form-group" class="form-group">
               <form id="change-image-form" action="/changeProfileImage" method="post">
-                <button type="submit" id="change-image-button" class="form-control btn btn-outline-danger">Change Profile Image</button>  
+                <button type="submit" id="change-image-button" class="form-control btn btn-outline-danger" style="border-radius:0px;">Change Profile Image</button>  
               </form>
             </section>
           <% } else { %>
@@ -79,11 +79,13 @@
             <p class="card-text" id="register-date"><small class="text-muted">Joined at: <%= user.createdAt.toLocaleString() %> </small></p>
           </div>
         </div>
-        <p id="view-posts" class="form-control btn btn-primary mt-auto sticky-top" style="margin-bottom:0px; z-index:10000">view your posts</p>
+        <p id="view-posts" class="form-control btn btn-primary mt-auto sticky-top" style="margin-bottom:0px; z-index:10000; border-radius:0px;">view your posts</p>
         <div id="profile-posts" style="display:none;">
-          <% for(var i=0; i<posts.length; ++i) { %>
-            <%- include('showPostPartial', { creator: user, post: posts[i], viewerId: user._id }); %>
-          <% } %>
+          <div id="show-posts-div" style="width:100%">
+            <% for(var i=0; i<posts.length; ++i) { %>
+              <%- include('showPostPartial', { creator: user, post: posts[i], viewerId: user._id }); %>
+            <% } %>
+          </div>
         </div>
       </div>
         
