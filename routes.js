@@ -60,6 +60,8 @@ module.exports = function(app, db) {
                     about: "",
                     admin: false,
                     profileImageURL: "",
+                    followedIds: [],
+                    followerIds: [],
                     createdAt: date,
                     updatedAt: date
                   },
@@ -426,7 +428,7 @@ module.exports = function(app, db) {
   
   //call getUserByIds as shown beneath
   /* 
-    callPromise(getUserById(db, "image-app-users", ids)).then(function(result) {
+    callPromise(getUserByIds(db, "image-app-users", ids)).then(function(result) {
       use received data here...
     });
   */
@@ -794,7 +796,43 @@ module.exports = function(app, db) {
   */
 
   const followUser = (db, cluster, followerId, followedId) => {
-    return new Promise((resolve, reject) => {});
+    return new Promise((resolve, reject) => {
+      db.collection(cluster).findOneAndUpdate({ _id: ObjectId(followerId), 
+                                                   followedIds: { $ne: followedId} },
+                                                 { $push: { followedIds: followedId } }, (error, result) => {
+        if(error){
+          reject(error)
+        } else if(result){
+          db.collection(cluster).findOneAndUpdate({ _id: ObjectId(followedId), 
+                                                   followerIds: { $ne: followerId} },
+                                                 { $push: { followerIds: followerId } }, (error2, result2) => {
+            if(error2){
+              reject(error2)
+            } else if(result2){
+              resolve(true)
+            } else {
+              db.collection(cluster).findOneAndUpdate({ _id: ObjectId(followerId) }, 
+                                               { $pull: { followedIds: followedId } }, (error3, result3) => {
+                if(error3){
+                  reject(error3)
+                } else {
+                  resolve(false)
+                }
+              })
+            }
+          })
+        } else {
+          db.collection(cluster).findOneAndUpdate({ _id: ObjectId(followerId) }, 
+                                               { $pull: { followedIds: followedId } }, (error3, result3) => {
+            if(error3){
+              reject(error3)
+            } else {
+              resolve(false)
+            }
+          })
+        }
+      })
+    });
   };
 
   //call unfollowUser as shown beneath
@@ -805,7 +843,18 @@ module.exports = function(app, db) {
   */
 
   const unfollowUser = (db, cluster, followerId, followedId) => {
-    return new Promise((resolve, reject) => {});
+    return new Promise((resolve, reject) => {
+      db.collection(cluster).findOneAndUpdate({ _id: ObjectId(followerId), followedIds: followedId }, 
+                                              { $pull: { followedIds: followedId } }, (error, result) => {
+        if(error) {
+          reject(error)
+        } else if(result){
+          resolve(true)
+        } else {
+          resolve(false)
+        }
+      })
+    });
   };
 
   //call getFollowedUsers as shown beneath
@@ -816,7 +865,21 @@ module.exports = function(app, db) {
   */
 
   const getFollowedUsers = (db, cluster, userId) => {
-    return new Promise((resolve, reject) => {});
+    return new Promise((resolve, reject) => {
+      callPromise(getUserById(db, cluster, userId)).then(function(user) {
+        if(user){
+          callPromise(getUserByIds(db, cluster, user.followedIds.map((i) => ObjectId(i))).then(function(followedUsers){
+            if(followedUsers){
+              resolve(followedUsers)
+            } else {
+              resolve(false)
+            }
+          }))
+        } else {
+          resolve(false)
+        }
+      });
+    });
   };
 
   const getUserFeed = (db, cluster, userId) => {
