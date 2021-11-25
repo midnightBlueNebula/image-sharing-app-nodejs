@@ -96,7 +96,12 @@
       
     })
     
+    $(".user-name").on("click", function(event){
+      const currentState = event.target.childNodes[1].style.display
+      event.target.childNodes[1].style.display =  currentState == "block" ? "none" : "block" 
+    })
     
+    document.addEventListener("scroll", function(event){}, { passive: true })
   </script>
 </html>
 
