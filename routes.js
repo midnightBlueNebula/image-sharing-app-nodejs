@@ -310,7 +310,7 @@ module.exports = function(app, db) {
     const date = req.query.date ? req.query.date : new Date("01 Jan 2021")
     req.session.currentURL = "/top-posts"
     
-    callPromise(getPostsByDate(db, "image-app-posts", date)).then(function(posts) {
+    callPromise(getTopLikedPosts(db, "image-app-posts", date)).then(function(posts) {
       if(posts){
         var data = []
         getCreatorPerPostThenRender(renderWithData, res, "showPosts.ejs", 
@@ -379,7 +379,7 @@ module.exports = function(app, db) {
     const userId = req.session.user_id
     
     callPromise(likeComment(db, "image-app-comments", commentId, userId)).then(function(result) {
-      res(result)
+      res.json(result)
     });
   });
   
@@ -392,9 +392,63 @@ module.exports = function(app, db) {
     const userId = req.session.user_id
     
     callPromise(regretLikeComment(db, "image-app-comments", commentId, userId)).then(function(result) {
-      res(result)
+      res.json(result)
     });
   });
+  
+  app.post("/follow/:followedId", (req, res) => {
+    if (!loggedIn(req.session.user_id)) {
+      res.redirect("/");
+    }
+    
+    const followerId = req.session.user_id
+    const followedId = req.params.followedId
+    
+    callPromise(followUser(db, "image-app-users", followerId, followedId)).then(function(result) {
+      if(result){
+        callPromise(getUserById(db, "image-app-users", followedId)).then(function(followedUser) {
+          res.json(followedUser)
+        })
+      } else {
+        res.send(false)
+      }
+    });
+  })
+  
+  app.post("/unfollow/:followedId", (req, res) => {
+    if (!loggedIn(req.session.user_id)) {
+      res.redirect("/");
+    }
+    
+    const followerId = req.session.user_id
+    const followedId = req.params.followedId
+    
+    callPromise(unfollowUser(db, "image-app-users", followerId, followedId)).then(function(result) {
+      if(result){
+        callPromise(getUserById(db, "image-app-users", followedId)).then(function(followedUser) {
+          res.json(followedUser)
+        })
+      } else {
+        res.send(false)
+      }
+    });
+  })
+  
+  app.get("/feed", (req, res) => {
+    if (!loggedIn(req.session.user_id)) {
+      res.redirect("/");
+    }
+    
+    const userId = req.session.user_id
+    
+    callPromise(getUserFeed(db, "image-app-users", userId)).then(function(feedPosts) {
+      if(feedPosts){
+        res.json(feedPosts)
+      } else {
+        res.send(false)
+      }
+    });
+  })
   
 
   /*                                     helper methods depends on app and db added here                                    */
@@ -799,20 +853,26 @@ module.exports = function(app, db) {
     return new Promise((resolve, reject) => {
       db.collection(cluster).findOneAndUpdate({ _id: ObjectId(followerId), 
                                                    followedIds: { $ne: followedId} },
-                                                 { $push: { followedIds: followedId } }, (error, result) => {
+                                                 { $push: { followedIds: followedId } }, 
+                                                 { returnOriginal: false },
+                                                 (error, result) => {
         if(error){
           reject(error)
         } else if(result){
           db.collection(cluster).findOneAndUpdate({ _id: ObjectId(followedId), 
-                                                   followerIds: { $ne: followerId} },
-                                                 { $push: { followerIds: followerId } }, (error2, result2) => {
+                                                    followerIds: { $ne: followerId} },
+                                                 { $push: { followerIds: followerId } },
+                                                 { returnOriginal: false },
+                                                 (error2, result2) => {
             if(error2){
               reject(error2)
             } else if(result2){
-              resolve(true)
+              resolve(result2)
             } else {
-              db.collection(cluster).findOneAndUpdate({ _id: ObjectId(followerId) }, 
-                                               { $pull: { followedIds: followedId } }, (error3, result3) => {
+              db.collection(cluster).findOneAndUpdate({ _id: ObjectId(followerId), 
+                                                        followedIds: followedId },
+                                                      { $pull: { followerIds: followerId } },
+                                                      (error3, result3) => {
                 if(error3){
                   reject(error3)
                 } else {
@@ -822,14 +882,7 @@ module.exports = function(app, db) {
             }
           })
         } else {
-          db.collection(cluster).findOneAndUpdate({ _id: ObjectId(followerId) }, 
-                                               { $pull: { followedIds: followedId } }, (error3, result3) => {
-            if(error3){
-              reject(error3)
-            } else {
-              resolve(false)
-            }
-          })
+          resolve(false)
         }
       })
     });
@@ -845,13 +898,24 @@ module.exports = function(app, db) {
   const unfollowUser = (db, cluster, followerId, followedId) => {
     return new Promise((resolve, reject) => {
       db.collection(cluster).findOneAndUpdate({ _id: ObjectId(followerId), followedIds: followedId }, 
-                                              { $pull: { followedIds: followedId } }, (error, result) => {
+                                              { $pull: { followedIds: followedId } },
+                                              { returnOriginal: false },
+                                              (error, result) => {
         if(error) {
           reject(error)
-        } else if(result){
-          resolve(true)
         } else {
-          resolve(false)
+          db.collection(cluster).findOneAndUpdate({ _id: ObjectId(followedId), followerIds: followerId }, 
+                                                  { $pull: { followerIds: followerId } }, 
+                                                  { returnOriginal: false },
+                                                  (error2, result2) => {
+            if(error2){
+              reject(error2)
+            } else if(result2){
+              resolve(result2)
+            } else {
+              resolve(false)
+            }
+          })
         }
       })
     });
@@ -881,9 +945,35 @@ module.exports = function(app, db) {
       });
     });
   };
+  
+  //call getUserFeed as shown beneath
+  /* 
+    callPromise(getUserFeed(db, "image-app-users", userId)).then(function(result) {
+      use received data here...
+    });
+  */
 
   const getUserFeed = (db, cluster, userId) => {
-    return new Promise((resolve, reject) => {});
+    return new Promise((resolve, reject) => {
+      callPromise(getFollowedUsers(db, "image-app-users", userId)).then(function(users) {
+        if(users){
+          let date = new Date();
+          date = date.setHour(date.getHour()-6)
+          
+          const userIds = users.map((u) => u.creatorId)
+          
+          callPromise(getPostsOfUser(db, "image-app-posts", userIds, date, true)).then(function(posts) {
+            if(posts){
+              resolve(posts)
+            } else {
+              resolve(false)
+            }
+          });
+        } else {
+          resolve(false)
+        }
+      });
+    });
   };
   
   //call createComment as shown beneath
@@ -904,6 +994,7 @@ module.exports = function(app, db) {
                      updatedAt: date,
                      postId: postId,
                      userId: userId,
+                     commentIds: [],
                      likedUserIds: [] }, (error, result) => {
                        if(error) {
                          reject(error)
@@ -1109,7 +1200,7 @@ module.exports = function(app, db) {
     res,
     viewFile,
     obj
-  ) /*(response, "profile.ejs", { variableName: data })*/ => {
+  ) /*(response, "profile.ejs", { variableName: dataToRender })*/ => {
     res.render(`${__dirname}/views/${viewFile}`, obj);
   };
 

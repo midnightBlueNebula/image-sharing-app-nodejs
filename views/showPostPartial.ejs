@@ -11,12 +11,10 @@
   <div class="row" id="username-date-row" style="margin:auto;">
     <div class="col-lg user-name">
       <%= creator.name %>
-      <div class="card user-card" style="height: 15em; width: 15rem; display: none;">
-        <img class="card-img-top" src=<%= creator.profileImageURL %>>
-        <div class="card-body">
-          <p class="card-title"><%= creator.about %></p>
-          <a href="#" class="card-link">Go somewhere</a>
-        </div>
+      <div class="card user-card" style="height: 15em; width: 15rem; display: none;" flex-direction="col">
+        <img class="card-img-top" src=<%= creator.profileImageURL %> style="height: 50%; width: 50%; flex: 2">
+        <p class="card-title" style="flex: 1"><%= creator.about %></p>  
+        <a href="#" class="card-link">Go somewhere</a>
       </div>
     </div>
     <div class="col-lg" style="width:300px">
@@ -37,7 +35,7 @@
     </div>  
   <% } else if(viewerId && post.likedUserIds.indexOf(viewerId) != -1) { %>
     <div class="card-body like-and-comment-div" style="margin:auto; padding-bottom:1px">
-      <p id="liked-post-<%= post._id %>" class="card-link like-post liked-post" style="display:inline-block"><%= post.likedUserIds.length %> <%= post.likedUserIds.length > 1 ? "likes" : "like" %></p>
+      <p id="like-post-<%= post._id %>" class="card-link like-post liked-post" style="display:inline-block"><%= post.likedUserIds.length %> <%= post.likedUserIds.length > 1 ? "likes" : "like" %></p>
       <p id="comment-<%= post._id %>" class="card-link comment" style="display:inline-block"><%= post.commentIds.length %> <%= post.commentIds.length > 1 ? "comments" : "comment" %></p>
     </div>
   <% } else { %>
