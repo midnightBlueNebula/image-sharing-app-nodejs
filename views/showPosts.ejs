@@ -35,17 +35,13 @@
     $(".like-post").on("click", function(event){
       if(!$(this).attr("class").includes("liked-post")){
         $(this).toggleClass("liked-post")
-        $(this).text("Liked")
         
         const url = `https://image-sharing-with-mongodb.glitch.me/like-post/${(event.target.id).replace("like-post-", "")}`
-        $.post(url).done(function(result, status){
-          if(result){
-            const data = JSON.parse(result)
-            alert(data._id)
-            alert(data.likedUserIds.length)
-            event.target.id = event.target.id.replace("like", "liked")
-            $(`#post-likes-${data._id}`)
-              .text(`${data.likedUserIds.length} ${data.likedUserIds.length > 1 ? "likes" : "like"}`)
+        $.post(url).done(function(data, status){
+          if(data){
+            //console.log(`${data.value.likedUserIds.length} ${data.value.likedUserIds.length > 1 ? "likes" : "like"}`)
+            const text = `${data.value.likedUserIds.length} ${data.value.likedUserIds.length > 1 ? "likes" : "like"}`
+            event.target.innerText = text
           } else {
             $("#show-post-div").append("div id='alert-box'>failed to like</div>")
             $("#alert-box").css({
@@ -61,19 +57,17 @@
             }, 2000)
           }
         }).fail(function(xhr, status, error){
-          alert("fail")
-          alert("Result: " + status + " " + error + " " + xhr.status + " " + xhr.statusText)
+          console.log("fail")
+          console.log("Result: " + status + " " + error + " " + xhr.status + " " + xhr.statusText)
         })
       } else {
         $(this).toggleClass("liked-post")
-        $(this).text("Like")
-        
-        const url = `https://image-sharing-with-mongodb.glitch.me/regret-like-post/${(event.target.id).replace("liked-post-", "")}`
+  
+        const url = `https://image-sharing-with-mongodb.glitch.me/regret-like-post/${(event.target.id).replace("like-post-", "")}`
         $.post(url).done(function(data, status){
           if(data){
-            event.target.id = event.target.id.replace("liked", "like")
-            $(`#post-likes-${data._id}`)
-              .text(`${data.likedUserIds.length} ${data.likedUserIds.length > 1 ? "likes" : "like"}`)
+            const text = `${data.value.likedUserIds.length} ${data.value.likedUserIds.length > 1 ? "likes" : "like"}`
+            event.target.innerText = text
           } else {
             $("#show-post-div").append("div id='alert-box'>failed to retract like</div>")
             $("#alert-box").css({
@@ -89,8 +83,8 @@
             }, 2000)
           }
         }).fail(function(xhr, status, error){
-          alert("fail")
-          alert("Result: " + status + " " + error + " " + xhr.status + " " + xhr.statusText)
+          console.log("fail")
+          console.log("Result: " + status + " " + error + " " + xhr.status + " " + xhr.statusText)
         })
       }
       
@@ -98,7 +92,7 @@
     
     $(".user-name").on("click", function(event){
       const currentState = event.target.childNodes[1].style.display
-      event.target.childNodes[1].style.display =  currentState == "block" ? "none" : "block" 
+      event.target.childNodes[1].style.display =  currentState == "flex" ? "none" : "flex" 
     })
     
     document.addEventListener("scroll", function(event){}, { passive: true })

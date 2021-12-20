@@ -28,7 +28,7 @@
       <div class="card"  id="profile-card">
         <div id="view-profile">         
           <% if(user.profileImageURL != ""){ %>
-            <img class="card-img-top" src=<%= user.profileImageURL %> alt="profile image">
+            <img class="card-img-top" src=<%= user.profileImageURL %> alt="profile image" style="height: 50%">
             <section id="change-image-form-group" class="form-group">
               <form id="change-image-form" action="/changeProfileImage" method="post">
                 <button type="submit" id="change-image-button" class="form-control btn btn-outline-danger" style="border-radius:0px;">Change Profile Image</button>  
