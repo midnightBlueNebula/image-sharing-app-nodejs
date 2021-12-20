@@ -864,21 +864,21 @@ module.exports = function(app, db) {
                                                  { $push: { followerIds: followerId } },
                                                  { returnOriginal: false },
                                                  (error2, result2) => {
-            if(error2){
-              reject(error2)
-            } else if(result2){
-              resolve(result2)
-            } else {
+            if(error2 || !result2){
               db.collection(cluster).findOneAndUpdate({ _id: ObjectId(followerId), 
                                                         followedIds: followedId },
                                                       { $pull: { followerIds: followerId } },
                                                       (error3, result3) => {
-                if(error3){
+                if(error2){
+                  reject(error2)
+                } else if(error3){
                   reject(error3)
                 } else {
                   resolve(false)
                 }
               })
+            } else {
+              resolve(result2)
             }
           })
         } else {
