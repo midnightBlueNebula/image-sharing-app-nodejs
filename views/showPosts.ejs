@@ -37,10 +37,12 @@
         $(this).toggleClass("liked-post")
         
         const url = `https://image-sharing-with-mongodb.glitch.me/like-post/${(event.target.id).replace("like-post-", "")}`
+        
         $.post(url).done(function(data, status){
           if(data){
-            //console.log(`${data.value.likedUserIds.length} ${data.value.likedUserIds.length > 1 ? "likes" : "like"}`)
-            const text = `${data.value.likedUserIds.length} ${data.value.likedUserIds.length > 1 ? "likes" : "like"}`
+            const text = `${data.value.likedUserIds.length} 
+                          ${data.value.likedUserIds.length > 1 ? "likes" : "like"}`
+            
             event.target.innerText = text
           } else {
             $("#show-post-div").append("div id='alert-box'>failed to like</div>")
@@ -64,9 +66,12 @@
         $(this).toggleClass("liked-post")
   
         const url = `https://image-sharing-with-mongodb.glitch.me/regret-like-post/${(event.target.id).replace("like-post-", "")}`
+        
         $.post(url).done(function(data, status){
           if(data){
-            const text = `${data.value.likedUserIds.length} ${data.value.likedUserIds.length > 1 ? "likes" : "like"}`
+            const text = `${data.value.likedUserIds.length} 
+                          ${data.value.likedUserIds.length > 1 ? "likes" : "like"}`
+            
             event.target.innerText = text
           } else {
             $("#show-post-div").append("div id='alert-box'>failed to retract like</div>")
@@ -93,6 +98,62 @@
     $(".user-name").on("click", function(event){
       const currentState = event.target.childNodes[1].style.display
       event.target.childNodes[1].style.display =  currentState == "flex" ? "none" : "flex" 
+    })
+    
+    $(".change-follow-status").on("click", function(event){
+      if($(this).attr("class").includes("following")){
+        $(this).toggleClass("following")
+        
+        const url = `https://image-sharing-with-mongodb.glitch.me/follow/${(event.target.id).replace("userId-", "")}`
+        
+        $.post(url).done(function(data, status){
+          if(data){
+            event.target.innerText = "Unfollow"
+          } else {
+            $("#show-post-div").append("div id='alert-box'>failed to follow</div>")
+            $("#alert-box").css({
+              "border": "1px solid red",
+              "color": "red",
+              "height": "25px",
+              "width": "100px",
+              "margin": "auto"
+            })
+            
+            setTimeout(function(){
+              $("#alert-box").remove()
+            }, 2000)
+          }
+        }).fail(function(xhr, status, error){
+          console.log("fail")
+          console.log("Result: " + status + " " + error + " " + xhr.status + " " + xhr.statusText)
+        })
+      } else {
+        $(this).toggleClass("following")
+        
+        const url = `https://image-sharing-with-mongodb.glitch.me/unfollow/${(event.target.id).replace("userId-", "")}`
+        
+        $.post(url).done(function(data, status){
+          if(data){
+            event.target.innerText = "Follow"
+          } else {
+            $("#show-post-div").append("div id='alert-box'>failed to unfollow</div>")
+            $("#alert-box").css({
+              "border": "1px solid red",
+              "color": "red",
+              "height": "25px",
+              "width": "100px",
+              "margin": "auto"
+            })
+            
+            setTimeout(function(){
+              $("#alert-box").remove()
+            }, 2000)
+          }
+        }).fail(function(xhr, status, error){
+          console.log("fail")
+          console.log("Result: " + status + " " + error + " " + xhr.status + " " + xhr.statusText)
+        })
+      }
     })
     
     document.addEventListener("scroll", function(event){}, { passive: true })

@@ -125,3 +125,11 @@ textarea{
 .user-name:hover{
   cursor: pointer; 
 }
+
+.expand-profile:hover{
+  cursor: default;
+}
+
+.change-follow-status:hover{
+  cursor: pointer;
+}

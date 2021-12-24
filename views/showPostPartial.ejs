@@ -11,10 +11,15 @@
   <div class="row" id="username-date-row" style="margin:auto;">
     <div class="col-lg user-name">
       <%= creator.name %>
-      <div class="card user-card" style="height: 15em; width: 15rem; display: none;" flex-direction="col">
+      <div class="card user-card expand-profile" style="height: 15em; width: 15rem; display: none;" flex-direction="col">
         <img class="card-img-top" src=<%= creator.profileImageURL %> style="height: 50%; width: 50%; flex: 2">
-        <p class="card-title" style="flex: 1"><%= creator.about %></p>  
-        <a href="#" class="card-link">Go somewhere</a>
+        <p class="card-title" style="flex: 1"><%= creator.about %></p>
+        <% if(creator._id.toString() == viewerId) { %>
+        <% } else if(creator.followerIds.includes(viewerId)) { %>
+          <p id="userId-<%= creator._id %>" class="card-link change-follow-status">Unfollow</p>
+        <% } else { %>
+          <p id="userId-<%= creator._id %>" class="card-link change-follow-status following">Follow</p>
+        <% } %>
       </div>
     </div>
     <div class="col-lg" style="width:300px">
