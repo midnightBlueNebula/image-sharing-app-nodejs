@@ -120,6 +120,10 @@
             } else {
               $("#follow-button").text("Follow")
             }
+            $("#follow-button").css("display", "block")
+            $("#follow-button").attr("creatorId", creatorId)
+          } else {
+            $("#follow-button").css("display", "none")
             $("#follow-button").attr("creatorId", creatorId)
           }
           
