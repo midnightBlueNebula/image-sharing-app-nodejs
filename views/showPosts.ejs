@@ -95,20 +95,77 @@
       
     })
     
-    $(".user-name").on("click", function(event){
-      const currentState = event.target.childNodes[1].style.display
-      event.target.childNodes[1].style.display =  currentState == "flex" ? "none" : "flex" 
+    
+    $(".user-name").on("mouseover", function(event){
+      const url = `https://image-sharing-with-mongodb.glitch.me/getUserJSON/${$(this).attr("creatorId")}`
+      $.get(url).done(function(data, status){
+        if(data){
+          const creatorId = data.creatorId
+          const name = data.name
+          const about = data.about
+          const image = data.image
+          const followerIds = data.followerIds
+          const viewerId = data.viewerId
+          
+          $("#creator-profile").css({"top": `${event.clientY}px`, "left": `${event.clientX}px`})
+          $("#creator-img").attr("src", data.image)
+          $("#creator-about").text(data.about)
+          
+          if(!viewerId){
+            
+          } else if(creatorId != viewerId){
+            if(followerIds.includes(viewerId)){
+              $("#follow-button").addClass("following")
+              $("#follow-button").text("Unfollow")
+            } else {
+              $("#follow-button").text("Follow")
+            }
+            $("#follow-button").attr("creatorId", creatorId)
+          }
+          
+          const followerCount = data.followerIds.length > 1 ? 
+                `${data.followerIds.length} followers` 
+                : `${data.followerIds.length} follower`
+          
+          $("#follower-count").text(followerCount)
+          
+        } else {
+          $("#show-post-div").append("div id='alert-box'>failed to follow</div>")
+          $("#alert-box").css({
+            "border": "1px solid red",
+            "color": "red",
+            "height": "25px",
+            "width": "100px",
+            "margin": "auto"
+          })
+            
+          setTimeout(function(){
+            $("#alert-box").remove()
+          }, 2000)
+        }
+      }).fail(function(xhr, status, error){
+          console.log("fail")
+          console.log("Result: " + status + " " + error + " " + xhr.status + " " + xhr.statusText)
+        })
     })
     
-    $(".change-follow-status").on("click", function(event){
-      if($(this).attr("class").includes("following")){
+    $("#follow-button").on("click", function(event){
+      const creatorId = $(this).attr("creatorId")
+      
+      if($(this).attr("class").includes("following") == false){
         $(this).toggleClass("following")
         
-        const url = `https://image-sharing-with-mongodb.glitch.me/follow/${(event.target.id).replace("userId-", "")}`
+        const url = `https://image-sharing-with-mongodb.glitch.me/follow/${creatorId}`
         
         $.post(url).done(function(data, status){
           if(data){
             event.target.innerText = "Unfollow"
+            
+            const followerCount = data.followerIds.length > 1 ? 
+                  `${data.followerIds.length} followers` 
+                  : `${data.followerIds.length} follower`
+            
+            $("#follower-count").text(followerCount)
           } else {
             $("#show-post-div").append("div id='alert-box'>failed to follow</div>")
             $("#alert-box").css({
@@ -130,11 +187,17 @@
       } else {
         $(this).toggleClass("following")
         
-        const url = `https://image-sharing-with-mongodb.glitch.me/unfollow/${(event.target.id).replace("userId-", "")}`
+        const url = `https://image-sharing-with-mongodb.glitch.me/unfollow/${creatorId}`
         
         $.post(url).done(function(data, status){
           if(data){
             event.target.innerText = "Follow"
+          
+            const followerCount = data.followerIds.length > 1 ? 
+                  `${data.followerIds.length} followers` 
+                  : `${data.followerIds.length} follower`
+            
+            $("#follower-count").text(followerCount)
           } else {
             $("#show-post-div").append("div id='alert-box'>failed to unfollow</div>")
             $("#alert-box").css({

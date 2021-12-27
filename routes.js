@@ -321,21 +321,22 @@ module.exports = function(app, db) {
     });
   });
   
-  app.post("/comment/:postId", (req, res) => {
+  app.post("/comment/:type/:parentId", (req, res) => {
     if (!loggedIn(req.session.user_id)) {
       res.redirect("/");
     }
     
     const content = h.cleanseString(req.body.content)
-    const postId = req.params.postId
+    const type = req.params.type
+    const parentId = req.params.parentId
     const userId = req.session.user_id
     
-    callPromise(createComment(db, "image-app-comments", content, postId, userId)).then(function(result) {
+    callPromise(createComment(db, "image-app-comments", content, type, parentId, userId)).then(function(result) {
       if(result){
         if(req.session.currentURL){
           back(req, res)
         } else {
-          res.redirect(`/show-post/${postId}`)
+          res.redirect(`/show-${type}/${parentId}`)
         }
       } else {
         res.send("failed to post comment.")
@@ -448,6 +449,22 @@ module.exports = function(app, db) {
         res.send(false)
       }
     });
+  })
+  
+  
+  app.get("/getUserJSON/:id", (req, res) => {
+    getUserById(db, "image-app-users", ObjectId(req.params.id)).then(function(user) {
+      if(user){
+        res.json({ creatorId: user._id.toString(),
+                   viewerId: req.session.user_id,
+                   name: user.name,
+                   about: user.about,
+                   image: user.profileImageURL,
+                   followerIds: user.followerIds })
+      } else {
+        res.send(false)
+      }
+    })
   })
   
 
@@ -978,12 +995,12 @@ module.exports = function(app, db) {
   
   //call createComment as shown beneath
   /* 
-    callPromise(createComment(db, "image-app-comments", content, postId, userId)).then(function(result) {
+    callPromise(createComment(db, "image-app-comments", content, type, parentId, userId)).then(function(result) {
       use received data here...
     });
   */
   
-  const createComment = (db, cluster, content, postId, userId) => {
+  const createComment = (db, cluster, content, type, parentId, userId) => {
     return new Promise((resolve, reject) => {
       const date = new Date()
       
@@ -992,7 +1009,8 @@ module.exports = function(app, db) {
                      content: content,
                      createdAt: date,
                      updatedAt: date,
-                     postId: postId,
+                     type: type,
+                     parentId: parentId,
                      userId: userId,
                      commentIds: [],
                      likedUserIds: [] }, (error, result) => {
@@ -1095,17 +1113,17 @@ module.exports = function(app, db) {
     })
   }
   
-  //call getCommentsOfPost as shown beneath
+  //call getCommentsOfParents as shown beneath
   /* 
-    callPromise(getCommentsOfPost(db, "image-app-comments", postId)).then(function(result) {
+    callPromise(getCommentsOfPost(db, `image-app-${type}s`, parentId)).then(function(result) {
       use received data here...
     });
   */
   
-  const getCommentsOfPost = (db, cluster, postId) => {
+  const getCommentsOfParents = (db, cluster, parentId) => {
     return new Promise((resolve, reject) => {
       db.collection(cluster)
-        .find({ postId: postId })
+        .find({ parentId: parentId })
         .sort({ createdAt: -1 })
         .toArray((error, result) => {
           if(error) {
