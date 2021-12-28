@@ -95,8 +95,10 @@
       
     })
     
+    var mouseBack = false
     
     $(".user-name").on("mouseover", function(event){
+      mouseBack = true
       const url = `https://image-sharing-with-mongodb.glitch.me/getUserJSON/${$(this).attr("creatorId")}`
       $.get(url).done(function(data, status){
         if(data){
@@ -107,7 +109,7 @@
           const followerIds = data.followerIds
           const viewerId = data.viewerId
           
-          $("#creator-profile").css({"top": `${event.clientY}px`, "left": `${event.clientX}px`})
+          $("#creator-profile").css({"top": `${event.clientY - 100}px`, "left": `${event.clientX}px`})
           $("#creator-img").attr("src", data.image)
           $("#creator-about").text(data.about)
           
@@ -118,6 +120,7 @@
               $("#follow-button").addClass("following")
               $("#follow-button").text("Unfollow")
             } else {
+              $("#follow-button").removeClass("following")
               $("#follow-button").text("Follow")
             }
             $("#follow-button").css("display", "block")
@@ -151,6 +154,21 @@
           console.log("fail")
           console.log("Result: " + status + " " + error + " " + xhr.status + " " + xhr.statusText)
         })
+    })
+    
+    
+    $(".user-name").on("mouseleave", function(event){
+      mouseBack = false
+      
+      setTimeout(function(){
+        if(!mouseBack){
+          $("#creator-profile").css({"top": "-1000px", "left": "-1000px"})
+          $("#creator-img").attr("src", "")
+          $("#creator-about").text("")
+          $("#follow-button").css("display", "none")
+          $("#follow-button").attr("creatorId", "")
+        }
+      }, 500)
     })
     
     $("#follow-button").on("click", function(event){
