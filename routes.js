@@ -653,7 +653,7 @@ module.exports = function(app, db) {
   const likePost = (db, cluster, postId, userId) => {
     return new Promise((resolve, reject) => {
       db.collection(cluster).findOneAndUpdate(
-        { _id: ObjectId(postId), likedUserIds: { $ne: userId } },
+        { _id: ObjectId(postId), likedUserIds: { $ne: userId }, creatorId: { $ne: userId } },
         { $push: { likedUserIds: userId } },
         { returnOriginal: false },
         (error, result) => {
@@ -867,6 +867,8 @@ module.exports = function(app, db) {
   */
 
   const followUser = (db, cluster, followerId, followedId) => {
+    if(followerId == followedId) return 
+    
     return new Promise((resolve, reject) => {
       db.collection(cluster).findOneAndUpdate({ _id: ObjectId(followerId), 
                                                    followedIds: { $ne: followedId} },
