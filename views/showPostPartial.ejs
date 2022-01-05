@@ -1,10 +1,3 @@
-<div id="creator-profile" class="card user-card user-name expand-profile" style="height: 10rem; width: 15rem; position: absolute; top:-1000px; left: -1000px; z-index: 10000; display:flex; flex-wrap:wrap; flex-direction:row">
-  <img id="creator-img" class="card-img-top" src="" style="height: 50%; width: 50%">
-  <p class="card-title" id="creator-about" style="width: 50%; margin:auto"></p>
-  <p id="follow-button" class="card-link change-follow-status" style="margin: 1rem"></p>
-  <p id="follower-count" style="margin: 1rem"></p>
-</div>
-
 <div class="card post-card" id="post-card-<%= post._id %>" style="width: 100%; margin:auto;"> 
       
   <img class="card-img-top post-image" id="post-image-<%= post._id %>" src=<%= post.imageURL %>>
@@ -15,11 +8,11 @@
     <p class="card-text post-context" id="post-context-<%= post._id %>"><%= post.context %></p>
   </div>
   <hr/>
-  <div class="row" id="username-date-row" style="margin:auto;">
-    <div class="col-lg user-name" creatorId="<%= post.creatorId %>">
+  <div class="row user-name" style="margin:auto;" creatorId="<%= post.creatorId %>">
+    <div class="col-lg user-name-col">
       <%= creator.name %>
     </div>
-    <div class="col-lg" style="width:300px">
+    <div class="col-lg date-col" style="width:300px">
       <%= post.createdAt.toLocaleDateString("tr-TR", {day: "2-digit", month: "short", year:"numeric", hour12: false, hour: "numeric", minute: "numeric", second: "numeric"}) %>
     </div>
   </div>
@@ -27,23 +20,23 @@
   <% if(viewerId && viewerId != creator._id.toString() && post.likedUserIds.indexOf(viewerId) == -1) { %>
     <div class="card-body like-and-comment-div" style="margin:auto; display:inline-block">
       <a id="like-post-<%= post._id %>" class="card-link like-post" style="display:inline-block"><%= post.likedUserIds.length %> <%= post.likedUserIds.length > 1 ? "likes" : "like" %></a>
-      <a id="comment-<%= post._id %>"class="card-link comment" style="display:inline-block"><%= post.commentIds.length %> <%= post.commentIds.length > 1 ? "comments" : "comment" %></a>
+      <a id="comment-<%= post._id %>"class="card-link comment comments-count" style="display:inline-block" parentType="post" parentId="<%= post._id %>"><%= post.commentIds.length %> <%= post.commentIds.length > 1 ? "comments" : "comment" %></a>
     </div>
   <% } else if(viewerId && viewerId == creator._id.toString()) { %>
     <div class="card-body users-like-comment-remove-post-div" style="margin: auto">
       <a id="user-post-likes-<%= post._id %>" class="card-link likes-count"><%= post.likedUserIds.length %> <%= post.likedUserIds.length > 1 ? "likes" : "like" %></a>
-      <a id="user-post-comments-<%= post._id %>" class="card-link comments-count"><%= post.commentIds.length %> <%= post.commentIds.length > 1 ? "comments" : "comment" %></a>
+      <a id="user-post-comments-<%= post._id %>" class="card-link comments-count" parentType="post" parentId="<%= post._id %>"><%= post.commentIds.length %> <%= post.commentIds.length > 1 ? "comments" : "comment" %></a>
       <a href="/delete-post/<%= post._id %>" class="card-link">Remove Post</a>
     </div>  
   <% } else if(viewerId && post.likedUserIds.indexOf(viewerId) != -1) { %>
     <div class="card-body like-and-comment-div" style="margin:auto; padding-bottom:1px">
       <p id="like-post-<%= post._id %>" class="card-link like-post liked-post" style="display:inline-block"><%= post.likedUserIds.length %> <%= post.likedUserIds.length > 1 ? "likes" : "like" %></p>
-      <p id="comment-<%= post._id %>" class="card-link comment" style="display:inline-block"><%= post.commentIds.length %> <%= post.commentIds.length > 1 ? "comments" : "comment" %></p>
+      <p id="comment-<%= post._id %>" class="card-link comment comments-count" style="display:inline-block" parentType="post" parentId="<%= post._id %>"><%= post.commentIds.length %> <%= post.commentIds.length > 1 ? "comments" : "comment" %></p>
     </div>
-  <% } else { %>
+  <% } else if(!viewerId){ %>
     <div class="card-body" style="text-align:center; padding-bottom:1px">
       <a id="post-likes-<%= post._id %>" class="card-link likes-count"><%= post.likedUserIds.length %> <%= post.likedUserIds.length > 1 ? "likes" : "like" %></a>
-      <a id="post-comments-<%= post._id %>" class="card-link comments-count"><%= post.commentIds.length %> <%= post.commentIds.length > 1 ? "comments" : "comment" %></a>
+      <a id="post-comments-<%= post._id %>" class="card-link comments-count" parentType="post" parentId="<%= post._id %>"><%= post.commentIds.length %> <%= post.commentIds.length > 1 ? "comments" : "comment" %></a>
       <hr />
       <a href="/register" class="card-link">Register now to like and comment on posts & follow your favorite users!</a>
     </div>
