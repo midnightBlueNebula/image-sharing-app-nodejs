@@ -123,7 +123,7 @@ module.exports = function(app, db) {
       res.redirect("/");
     }
     
-    session.currentURL = "/profile"
+    req.session.currentURL = "/profile"
 
     callPromise(getUserById(db, "image-app-users", id)).then(function(user) {
       callPromise(getPostsOfUser(db, "image-app-posts", user._id.toString())).then(function(posts) {
@@ -219,7 +219,7 @@ module.exports = function(app, db) {
       res.redirect("/");
     }
     
-    if (req.session.currentURL == `/post/${req.params.id}`) {
+    if (req.session.currentURL == `/show-post/${req.params.id}`) {
       req.session.currentURL = "/new-posts"
     } 
     
@@ -321,53 +321,60 @@ module.exports = function(app, db) {
     });
   });
   
-  app.post("/comment/:type/:parentId", (req, res) => {
+  app.post("/comment/:parentType/:parentId", (req, res) => {
     if (!loggedIn(req.session.user_id)) {
       res.redirect("/");
     }
     
     const content = h.cleanseString(req.body.content)
-    const type = req.params.type
+    const parentType = req.params.parentType
     const parentId = req.params.parentId
     const userId = req.session.user_id
     
-    callPromise(createComment(db, "image-app-comments", content, type, parentId, userId)).then(function(result) {
+    callPromise(createComment(db, "image-app-comments", content, parentType, parentId, userId)).then(function(result) {
       if(result){
-        if(req.session.currentURL){
-          back(req, res)
-        } else {
-          res.redirect(`/show-${type}/${parentId}`)
-        }
+        res.json(result)
       } else {
         res.send("failed to post comment.")
       }
     });
   })
   
-  app.get("/delete-comment/:commentId", (req, res) => {
+  app.get("/delete-comment/:parentType/:commentId", (req, res) => {
     if (!loggedIn(req.session.user_id)) {
       res.redirect("/");
     }
     
+    const parentType = req.params.parentType
     const commentId = req.params.commentId
     const userId = req.session.user_ıd
     
     callPromise(isAdmin(db, "image-app-users", userId)).then(function(admin) {
       if(admin){
-        callPromise(deleteComment(db, "image-app-comments", commentId)).then(function(result) {
-          back(req, res)
+        callPromise(deleteComment(db, "image-app-comments", parentType, commentId)).then(function(result) {
+          res.json(result)
         });
       } else {
         callPromise(isCommentor(db, "image-app-comments", commentId, userId)).then(function(commentor) {
           if(commentor){
-            callPromise(deleteComment(db, "image-app-comments", commentId)).then(function(result) {
-              back(req, res)
+            callPromise(deleteComment(db, "image-app-comments", parentType, commentId)).then(function(result) {
+              res.json(result)
             });
           } else {
             res.redirect("/")
           }
         })
       }
+    })
+  })
+  
+  app.get("/get-comments/:parentType/:parentId", (req, res) => {
+    const parentType = req.params.parentType
+    const parentId = req.params.parentId
+    const viewerId = req.session.user_id
+    
+    callPromise(getCommentsOfParent(db, "image-app-comments", parentId)).then(function(comments){
+      getUserPerCommentThenSend(res, viewerId, comments, 0, [])
     })
   })
   
@@ -467,10 +474,11 @@ module.exports = function(app, db) {
     })
   })
   
+  
 
   /*                                     helper methods depends on app and db added here                                    */
 
-  //call async data request from database (promise -> data request, example: getUserById function)
+  //call async data request from database example: callPromise(getUserById(args)).then(function(data){ use data here })
   const callPromise = async promise => {
     const result = await promise;
     return result;
@@ -635,7 +643,9 @@ module.exports = function(app, db) {
           if (error) {
             reject(error);
           } else {
-            resolve(true);
+            callPromise(deleteCommentsOfParent(db, cluster, postId)).then(function(result2){
+              resolve(true)
+            })
           }
         }
       );
@@ -997,12 +1007,12 @@ module.exports = function(app, db) {
   
   //call createComment as shown beneath
   /* 
-    callPromise(createComment(db, "image-app-comments", content, type, parentId, userId)).then(function(result) {
+    callPromise(createComment(db, "image-app-comments", content, parentType, parentId, userId)).then(function(result) {
       use received data here...
     });
   */
   
-  const createComment = (db, cluster, content, type, parentId, userId) => {
+  const createComment = (db, cluster, content, parentType, parentId, userId) => {
     return new Promise((resolve, reject) => {
       const date = new Date()
       
@@ -1011,7 +1021,7 @@ module.exports = function(app, db) {
                      content: content,
                      createdAt: date,
                      updatedAt: date,
-                     type: type,
+                     parentType: parentType,
                      parentId: parentId,
                      userId: userId,
                      commentIds: [],
@@ -1019,9 +1029,23 @@ module.exports = function(app, db) {
                        if(error) {
                          reject(error)
                        } else if(result) {
-                         resolve(result.ops[0])
+                         db.collection(`image-app-${parentType}s`)
+                           .findOneAndUpdate({ _id: ObjectId(parentId) },
+                                             { $push: { commentIds: result.ops[0]._id } },
+                                             { returnOrginal: false}, (error2, result2) => {
+                             if(error2){
+                               reject(error2)
+                             } else if(result2){
+                               resolve({ parent: result2, comment: result.ops[0] })
+                             } else {
+                               resolve(false)
+                             }
+                         })
                        } else {
-                         resolve(false)
+                         callPromise(deleteComment(db, "image-app-comments", parentType, result.ops[0]._id.toString()))
+                                    .then(function(result3) {
+                           resolve(false)
+                         });
                        }
                      })
     })
@@ -1029,21 +1053,54 @@ module.exports = function(app, db) {
   
   //call deleteComment as shown beneath
   /* 
-    callPromise(deleteComment(db, "image-app-comments", commentId)).then(function(result) {
+    callPromise(deleteComment(db, "image-app-comments", parentType, commentId)).then(function(result) {
       use received data here...
     });
   */
   
-  const deleteComment = (db, cluster, commentId) => {
+  const deleteComment = (db, cluster, parentType, commentId) => {
     return new Promise((resolve, reject) => {
       db.collection(cluster)
         .deleteOne({ _id: ObjectId(commentId) }, (error, result) => {
           if(error){
             reject(error)
           } else {
+            db.collection(`image-app-${parentType}s`)
+            .findOneAndUpdate({ _id: ObjectId(result.parentId)},
+                              { $pull: { commentIds: result._id.toString() } },
+                              { returnOrginal: false},
+                              (err2, res2) => {
+              if(err2){
+                reject(err2)
+              } else {
+                callPromise(deleteCommentsOfParent(db, `image-app-comments`, commentId)).then(function(result3) {
+                  resolve(res2)
+                });
+              }
+            })
             resolve(true)
           }
         })
+    })
+  }
+  
+  //call deleteCommentsOfParent as shown beneath
+  /* 
+    callPromise(deleteCommentsOfParent(db, `image-app-${parentType}s`, parentId)).then(function(result) {
+      use received data here...
+    });
+  */
+  
+  const deleteCommentsOfParent = (db, collection, parentId) => {
+    return new Promise((resolve, reject) => {
+      db.collection(collection)
+        .deleteMany({ parentId: parentId}, (error, result) => {
+          if(error){
+            reject(error)
+          } else {
+            resolve(result)
+          }
+      })
     })
   }
   
@@ -1056,7 +1113,7 @@ module.exports = function(app, db) {
   
   const getCommentById = (db, cluster, commentId) => {
     return new Promise((resolve, reject) => {
-      db.collection(cluster).findOne({ _id: commentId }, (error, result) => {
+      db.collection(cluster).findOne({ _id: ObjectId(commentId) }, (error, result) => {
         if(error) {
           reject(error)
         } else if(result) {
@@ -1066,6 +1123,22 @@ module.exports = function(app, db) {
         }
       })
     })
+  }
+  
+  //call getUserPerCommentThenSend as shown beneath
+  /* 
+    getUserPerCommentThenSend(response, viewerId, comments, 0, [])
+  */
+  
+  const getUserPerCommentThenSend = (response, viewerId, comments, index, data) => {
+    if(comments[index]){
+      callPromise(getUserById(db, "image-app-users", comments[index].userId)).then(function(user){
+        data.push({ comment: comments[index], user: user })
+        getUserPerCommentThenSend(response, viewerId, comments, ++index, data)
+      })
+    } else {
+      response.json({viewerId: viewerId, data: data})
+    }
   }
   
   //call isCommentor
@@ -1115,14 +1188,14 @@ module.exports = function(app, db) {
     })
   }
   
-  //call getCommentsOfParents as shown beneath
+  //call getCommentsOfParent as shown beneath
   /* 
-    callPromise(getCommentsOfPost(db, `image-app-${type}s`, parentId)).then(function(result) {
+    callPromise(getCommentsOfParent(db, `image-app-comments`, parentId)).then(function(result) {
       use received data here...
     });
   */
   
-  const getCommentsOfParents = (db, cluster, parentId) => {
+  const getCommentsOfParent = (db, cluster, parentId) => {
     return new Promise((resolve, reject) => {
       db.collection(cluster)
         .find({ parentId: parentId })
@@ -1173,8 +1246,8 @@ module.exports = function(app, db) {
   const likeComment = (db, cluster, commentId, userId) => {
     return new Promise((resolve, reject) => {
       db.collection(cluster).findOneAndUpdate(
-        { _id: ObjectId(commentId), $in: { likedUserIds: userId} },
-        { likedUserIds: { $push: userId } },
+        { _id: ObjectId(commentId), likedUserIds: { $ne: userId }, userId: { $ne: userId } },
+        { $push: { likedUserIds: userId } },
         { returnOriginal: false },
         (error, result) => {
           if (error) {
@@ -1199,8 +1272,8 @@ module.exports = function(app, db) {
   const regretLikeComment = (db, cluster, commentId, userId) => {
     return new Promise((resolve, reject) => {
       db.collection(cluster).findOneAndUpdate(
-        { _id: ObjectId(commentId), $in: { likedUserIds: userId} },
-        { likedUserIds: { $push: userId } },
+        { _id: ObjectId(commentId), likedUserIds: userId },
+        { $pull: { likedUserIds: userId } },
         { returnOriginal: false },
         (error, result) => {
           if (error) {
