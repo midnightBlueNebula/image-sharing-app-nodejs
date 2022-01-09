@@ -133,3 +133,38 @@ textarea{
 .change-follow-status:hover{
   cursor: pointer;
 }
+
+.comment-div {
+  height: 100px;
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: column;
+  position: relative;
+  z-index: 100000;
+  border-top: 1px solid rgba(128,128,128,0.37);
+}
+
+.user-name-in-comments-div {
+  width: 100px;
+  height: 100px;
+  border-right: 1px solid rgba(128,128,128,0.37);
+}
+
+.user-image-in-comment{
+  width: 100px;
+  height: 80px;
+}
+
+.user-name-in-comment{
+  font-size: 14px;
+  width: 100px;
+  text-align:center;
+}
+
+.comment-in-comments-div{
+  text-align:left;
+}
+
+
+
+

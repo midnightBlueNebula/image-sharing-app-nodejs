@@ -29,19 +29,18 @@
       <div class="card-body comments-div">
         <p class="card-text post-context comments-div" id="post-context-in-comments-div"></p>
       </div>
-      <hr/>
-      <div id="show-comments" class="comments-div" style="height:100%; overflow-y:auto">
+      <div id="show-comments" class="comments-div" style="height:100%; width:100%; overflow-y:auto">
         
       </div>
         <% if(viewerId) { %>
-          <form id="comment-form" style="position:relative; z-index:10000" class="comments-div">
-            <textarea class="comments-div" id="comment-input" style="width: 100%">
+          <form id="comment-form" style="position:relative; z-index:10000" class="in-comments-div">
+            <textarea class="in-comments-div" id="comment-input" style="width: 100%">
             </textarea>
             <br />
-            <input type="submit" id="send-comment" value="send" class="btn btn-primary comments-div" style="width:100%"/>
+            <input type="submit" id="send-comment" value="send" class="btn btn-primary in-comments-div" style="width:100%"/>
           </form>
         <% } else { %>
-          <div id="register-to-comment" class="comments-div">
+          <div id="register-to-comment" class="in-comments-div">
             
           </div>
         <% } %>
@@ -300,7 +299,39 @@
           const commentsAndUsers = data.data
           
           commentsAndUsers.forEach((commentAndUser) => {
-            $("#show-comments").append(commentAndUser.comment.content)
+            const user = commentAndUser.user;
+            const comment = commentAndUser.comment;
+            const commentDate = new Date(comment.createdAt)
+                                .toLocaleDateString("en-EN", 
+                                {day: "2-digit", month: "short", 
+                                year:"numeric", hour12: false, hour: "numeric", 
+                                minute: "numeric", second: "numeric"})
+                                
+            const commentDiv = `<div class="comment-div in-comments-div">
+                                  
+                                  <div class="user-name-in-comments-div in-comments-div">
+                                    <img src="${user.profileImageURL}" 
+                                         class="user-image-in-comment in-comments-div">
+                                    <p class="user-name-in-comment in-comments-div">${user.name}</p>
+                                  </div>
+                                  
+                                  <div class="comment-in-comments-div in-comments-div">
+                                    <p class="comment-content in-comments-div">${comment.content}</p>
+                                  </div>
+                                  <div class="comment-count-likes-date in-comments-div">
+                                    <a class="card-link comments-count"
+                                       parentId="${comment.userId}" 
+                                       parentType="comment">
+                                         ${comment.commentIds.length}
+                                    </a>
+                                    <a class="card-link comment-likes in-comments-div">${comment.likedUserIds.length}</a>
+                                    <br />
+                                    <a class="card-link comment-date in-comments-div">${commentDate}</a>
+                                  </div>
+                                
+                                </div>`
+                                
+            $("#show-comments").append(commentDiv)
           })
         }
       }).fail(function(xhr, status, error){
@@ -319,9 +350,40 @@
       const url = `https://image-sharing-with-mongodb.glitch.me/comment/${parentType}/${parentId}`;
       $.post(url, { content: comment }).done(function(data){
         if(data){
-          const parent = data.parent;
+        console.log(data)
+          const user = data.user;
           const comment = data.comment;
-          $("#show-comments").append(comment.content)
+          const commentDate = new Date(comment.createdAt)
+                                .toLocaleDateString("en-EN", 
+                                {day: "2-digit", month: "short", 
+                                year:"numeric", hour12: false, hour: "numeric", 
+                                minute: "numeric", second: "numeric"})
+                                
+          const commentDiv = `<div class="comment-div in-comments-div">
+                                  
+                                  <div class="user-name-in-comments-div in-comments-div">
+                                    <img src="${user.profileImageURL}" 
+                                         class="user-image-in-comment in-comments-div">
+                                    <p class="user-name-in-comment in-comments-div">${user.name}</p>
+                                  </div>
+                                  
+                                  <div class="comment-in-comments-div in-comments-div">
+                                    <p class="comment-content in-comments-div">${comment.content}</p>
+                                  </div>
+                                  <div class="comment-count-likes-date in-comments-div">
+                                    <a class="card-link comments-count"
+                                       parentId="${comment.userId}" 
+                                       parentType="comment">
+                                         ${comment.commentIds.length}
+                                    </a>
+                                    <a class="card-link comment-likes in-comments-div">${comment.likedUserIds.length}</a>
+                                    <br />
+                                    <a class="card-link comment-date in-comments-div">${commentDate}</a>
+                                  </div>
+                                
+                              </div>`
+                                
+          $("#show-comments").prepend(commentDiv)
         }
       }).fail(function(xhr, status, error){
         console.log("fail")
@@ -329,17 +391,18 @@
       })
     })
     
-    /*$(document).on("click", function(event){
-      if($(this).hasClass("comments-div") == false || $(this).hasClass("comments-count") == false){
+    $(document).on("click", function(event){
+    
+      if(event.target.className.includes("comments-div") == false && event.target.className.includes("in-comments-div") == false && event.target.className.includes("comments-count") == false){
         $("#comments-div-of-post").css({"top": "-10000px", 
                                       "left": "-100000px"});
         
-        $("#post-image-in-comments-div").attr("src", imageSrc);
-        $("#post-title-in-comments-div").text(title);
-        $("#post-context-in-comments-div").text(context);
-        $("#show-comments").html("")
+        $("#post-image-in-comments-div").attr("src", "");
+        $("#post-title-in-comments-div").text("");
+        $("#post-context-in-comments-div").text("");
+        $("#show-comments").empty()
       }
-    })*/
+    })
     
     document.addEventListener("scroll", function(event){}, { passive: true })
   </script>

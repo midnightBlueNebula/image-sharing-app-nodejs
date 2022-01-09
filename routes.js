@@ -131,7 +131,7 @@ module.exports = function(app, db) {
           getCreatorPerPostThenRender(renderWithData, res, "profile.ejs", 
                                       { user: user, 
                                         posts: posts, 
-                                        viewerId: user._id.toString() }, 
+                                        viewerId: req.session.user_id }, 
                                       likedPosts, 0, [])
         });
       });
@@ -204,9 +204,9 @@ module.exports = function(app, db) {
     }
     
     const userId = req.session.user_id
-    const title = req.body.title
-    const imageURL = req.body.imageURL
-    const context = req.body.context
+    const title = h.cleanseString(req.body.title)
+    const imageURL = h.cleanseString(req.body.imageURL)
+    const context = h.cleanseString(req.body.context)
 
     callPromise(createPost(db, "image-app-posts", userId, title, imageURL, context)).then(function(result) {
       const path = "/show-post/" + result._id
@@ -331,11 +331,17 @@ module.exports = function(app, db) {
     const parentId = req.params.parentId
     const userId = req.session.user_id
     
-    callPromise(createComment(db, "image-app-comments", content, parentType, parentId, userId)).then(function(result) {
-      if(result){
-        res.json(result)
+    callPromise(createComment(db, "image-app-comments", content, parentType, parentId, userId)).then(function(comment) {
+      if(comment){
+        callPromise(getUserById(db, "image-app-users", userId.toString())).then(function(user){
+          if(user){
+            res.json({ comment: comment, user: user })
+          } else {
+            res.send(false)
+          }
+        })
       } else {
-        res.send("failed to post comment.")
+        res.send(false)
       }
     });
   })
@@ -1036,7 +1042,7 @@ module.exports = function(app, db) {
                              if(error2){
                                reject(error2)
                              } else if(result2){
-                               resolve({ parent: result2, comment: result.ops[0] })
+                               resolve(result.ops[0])
                              } else {
                                resolve(false)
                              }
