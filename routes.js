@@ -242,30 +242,32 @@ module.exports = function(app, db) {
     })
   });
   
-  app.post("/like-post/:postId", (req, res) => {
+  app.post("/like/:content/:contentId", (req, res) => {
     if (!loggedIn(req.session.user_id)) {
       res.redirect("/");
     }
     
-    const postId = req.params.postId
+    const content = req.params.content
+    const contentId = req.params.contentId
     const userId = req.session.user_id
     
-    callPromise(likePost(db, "image-app-posts", postId, userId)).then(function(result) {
+    callPromise(likeContent(db, `image-app-${content}s`, contentId, userId)).then(function(result) {
       res.json(result)
     }).catch(function(error){
       res.json(error.message)
     });
   });
   
-  app.post("/regret-like-post/:postId", (req, res) => {
+  app.post("/regret-like/:content/:contentId", (req, res) => {
     if (!loggedIn(req.session.user_id)) {
       res.redirect("/");
     }
     
-    const postId = req.params.postId
+    const content = req.params.content
+    const contentId = req.params.contentId
     const userId = req.session.user_id
     
-    callPromise(regretLikePost(db, "image-app-posts", postId, userId)).then(function(result) {
+    callPromise(regretLikeContent(db, `image-app-${content}s`, contentId, userId)).then(function(result) {
       res.json(result)
     }).catch(function(error){
       res.json(error.message)
@@ -384,31 +386,7 @@ module.exports = function(app, db) {
     })
   })
   
-  app.post("/like-comment/:commentId", (req, res) => {
-    if (!loggedIn(req.session.user_id)) {
-      res.redirect("/");
-    }
-    
-    const commentId = req.params.commentId
-    const userId = req.session.user_id
-    
-    callPromise(likeComment(db, "image-app-comments", commentId, userId)).then(function(result) {
-      res.json(result)
-    });
-  });
   
-  app.post("/regret-like-comment/:commentId", (req, res) => {
-    if (!loggedIn(req.session.user_id)) {
-      res.redirect("/");
-    }
-    
-    const commentId = req.params.commentId
-    const userId = req.session.user_id
-    
-    callPromise(regretLikeComment(db, "image-app-comments", commentId, userId)).then(function(result) {
-      res.json(result)
-    });
-  });
   
   app.post("/follow/:followedId", (req, res) => {
     if (!loggedIn(req.session.user_id)) {
@@ -659,17 +637,17 @@ module.exports = function(app, db) {
   };
 
 
-  //call likePost as shown beneath
+  //call likeContent as shown beneath
   /* 
-    callPromise(likePost(db, "image-app-posts", postId, userId)).then(function(result) {
+    callPromise(likeContent(db, `image-app-${content}s`, contentId, userId)).then(function(result) {
       use received data here...
     });
   */
 
-  const likePost = (db, cluster, postId, userId) => {
+  const likeContent = (db, cluster, contentId, userId) => {
     return new Promise((resolve, reject) => {
       db.collection(cluster).findOneAndUpdate(
-        { _id: ObjectId(postId), likedUserIds: { $ne: userId }, creatorId: { $ne: userId } },
+        { _id: ObjectId(contentId), likedUserIds: { $ne: userId }, creatorId: { $ne: userId } },
         { $push: { likedUserIds: userId } },
         { returnOriginal: false },
         (error, result) => {
@@ -685,17 +663,17 @@ module.exports = function(app, db) {
     });
   };
   
-  //call regretLikePost as shown beneath
+  //call regretLikeContent as shown beneath
   /* 
-    callPromise(regretLikePost(db, "image-app-posts", postId, userId)).then(function(result) {
+    callPromise(regretLikeContent(db, `image-app-${content}s`, contentId, userId)).then(function(result) {
       use received data here...
     });
   */
 
-  const regretLikePost = (db, cluster, postId, userId) => {
+  const regretLikeContent = (db, collection, contentId, userId) => {
     return new Promise((resolve, reject) => {
-      db.collection(cluster).findOneAndUpdate(
-        { _id: ObjectId(postId), likedUserIds: userId },
+      db.collection(collection).findOneAndUpdate(
+        { _id: ObjectId(contentId), likedUserIds: userId },
         { $pull: { likedUserIds: userId } },
         { returnOriginal: false },
         (error, result) => {
@@ -1242,58 +1220,6 @@ module.exports = function(app, db) {
     })
   }
   
-   //call likeComment as shown beneath
-  /* 
-    callPromise(likeComment(db, "image-app-comments", commentId, userId)).then(function(result) {
-      use received data here...
-    });
-  */
-
-  const likeComment = (db, cluster, commentId, userId) => {
-    return new Promise((resolve, reject) => {
-      db.collection(cluster).findOneAndUpdate(
-        { _id: ObjectId(commentId), likedUserIds: { $ne: userId }, userId: { $ne: userId } },
-        { $push: { likedUserIds: userId } },
-        { returnOriginal: false },
-        (error, result) => {
-          if (error) {
-            reject(error);
-          } else if (result) {
-            resolve(result);
-          } else {
-            resolve(false)
-          }
-        }
-      );
-    });
-  };
-  
-  //call regretLikeComment as shown beneath
-  /* 
-    callPromise(regretLikeComment(db, "image-app-comments", commentId, userId)).then(function(result) {
-      use received data here...
-    });
-  */
-
-  const regretLikeComment = (db, cluster, commentId, userId) => {
-    return new Promise((resolve, reject) => {
-      db.collection(cluster).findOneAndUpdate(
-        { _id: ObjectId(commentId), likedUserIds: userId },
-        { $pull: { likedUserIds: userId } },
-        { returnOriginal: false },
-        (error, result) => {
-          if (error) {
-            reject(error);
-          } else if (result) {
-            resolve(result);
-          } else {
-            resolve(false)
-          }
-        }
-      );
-    });
-  };
-
 
   const renderWithData = (
     res,

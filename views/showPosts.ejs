@@ -15,10 +15,10 @@
 
   <body>
     <div id="creator-profile" class="card user-card user-name expand-profile" style="height: 10rem; width: 15rem; position: absolute; top:-1000px; left: -1000px; z-index: 10000; display:flex; flex-wrap:wrap; flex-direction:row">
-      <img id="creator-img" class="card-img-top" src="" style="height: 50%; width: 50%">
-      <p class="card-title" id="creator-about" style="width: 50%; margin:auto"></p>
-      <p id="follow-button" class="card-link change-follow-status" style="margin: 1rem"></p>
-      <p id="follower-count" style="margin: 1rem"></p>
+      <img id="creator-img" class="card-img-top expand-profile" src="" style="height: 50%; width: 50%">
+      <p class="card-title expand-profile" id="creator-about" style="width: 50%; margin:auto"></p>
+      <p id="follow-button" class="card-link change-follow-status expand-profile" style="margin: 1rem"></p>
+      <p id="follower-count" class="expand-profile" style="margin: 1rem"></p>
     </div>
 
     <div id="comments-div-of-post" class="card comments-div" style="height: 100vh; width: 33%; position: absolute; top:-1000px; left: -1000px; z-index: 9999; overflow-y: auto">
@@ -64,16 +64,17 @@
   </script>
   
   <script>
-    $(".like-post").on("click", function(event){
-      if(!$(this).attr("class").includes("liked-post")){
-        $(this).toggleClass("liked-post")
+    $(document).on("click", ".like-content", function(event){
+      if(!$(this).attr("class").includes("liked-content")){
+        $(this).toggleClass("liked-content")
+        const content = $(this).attr("contentType")
+        const contentId = $(this).attr("contentId")
         
-        const url = `https://image-sharing-with-mongodb.glitch.me/like-post/${(event.target.id).replace("like-post-", "")}`
+        const url = `https://image-sharing-with-mongodb.glitch.me/like/${content}/${contentId}`
         
         $.post(url).done(function(data, status){
           if(data){
-            const text = `${data.value.likedUserIds.length} 
-                          ${data.value.likedUserIds.length > 1 ? "likes" : "like"}`
+            const text = `${data.value.likedUserIds.length} ${data.value.likedUserIds.length > 1 ? "likes" : "like"}`
             
             event.target.innerText = text
           } else {
@@ -95,14 +96,15 @@
           console.log("Result: " + status + " " + error + " " + xhr.status + " " + xhr.statusText)
         })
       } else {
-        $(this).toggleClass("liked-post")
+        $(this).toggleClass("liked-content")
+        const content = $(this).attr("contentType")
+        const contentId = $(this).attr("contentId")
+        const url = `https://image-sharing-with-mongodb.glitch.me/regret-like/${content}/${contentId}`
   
-        const url = `https://image-sharing-with-mongodb.glitch.me/regret-like-post/${(event.target.id).replace("like-post-", "")}`
         
         $.post(url).done(function(data, status){
           if(data){
-            const text = `${data.value.likedUserIds.length} 
-                          ${data.value.likedUserIds.length > 1 ? "likes" : "like"}`
+            const text = `${data.value.likedUserIds.length} ${data.value.likedUserIds.length > 1 ? "likes" : "like"}`
             
             event.target.innerText = text
           } else {
@@ -129,7 +131,7 @@
     
     var mouseBack = false
     
-    $(".user-name").on("mouseover", function(event){
+    $(document).on("mouseover", ".user-name", function(event){
       mouseBack = true
       const url = `https://image-sharing-with-mongodb.glitch.me/getUserJSON/${$(this).attr("creatorId")}`
       $.get(url).done(function(data, status){
@@ -189,7 +191,7 @@
     })
     
     
-    $(".user-name").on("mouseleave", function(event){
+    $(document).on("mouseleave", ".user-name", function(event){
       mouseBack = false
       
       setTimeout(function(){
@@ -203,7 +205,7 @@
       }, 500)
     })
     
-    $("#follow-button").on("click", function(event){
+    $(document).on("click", "#follow-button", function(event){
       const creatorId = $(this).attr("creatorId")
       
       if($(this).attr("class").includes("following") == false){
@@ -273,19 +275,21 @@
       }
     })
     
-    $(".comments-count").on("click", function(event){
+    $(document).on("click", ".comments-count", function(event){
       $("#comments-div-of-post").css({"top": "0px", 
                                       "left": $(window).width()/2-500/2+"px"});
       
       const parentId = $(this).attr("parentId");
       const parentType = $(this).attr("parentType")
-      const imageSrc = $(`#post-image-${parentId}`).attr("src");
-      const title = $(`#post-title-${parentId}`).text();
-      const context = $(`#post-context-${parentId}`).text();
-      
-      $("#post-image-in-comments-div").attr("src", imageSrc);
-      $("#post-title-in-comments-div").text(title);
-      $("#post-context-in-comments-div").text(context);
+      if(parentType == "post"){
+        const imageSrc = $(`#post-image-${parentId}`).attr("src");
+        const title = $(`#post-title-${parentId}`).text();
+        const context = $(`#post-context-${parentId}`).text();
+
+        $("#post-image-in-comments-div").attr("src", imageSrc);
+        $("#post-title-in-comments-div").text(title);
+        $("#post-context-in-comments-div").text(context);
+      }
       
       if($("#send-comment")){
         $("#send-comment").attr("parentType", parentType);
@@ -296,11 +300,22 @@
       
       $.get(url).done(function(data){
         if(data && data.data){
+          const viewerId = data.viewerId
           const commentsAndUsers = data.data
           
           commentsAndUsers.forEach((commentAndUser) => {
             const user = commentAndUser.user;
             const comment = commentAndUser.comment;
+            
+            var contentClass = viewerId && viewerId != comment.userId ? "like-content" : "no-liking-auth"
+            
+            if(comment.likedUserIds.indexOf(viewerId) != -1){
+              contentClass += " liked-content"
+            }
+             
+            const contentType = "comment"
+            const contentId = comment._id
+            
             const commentDate = new Date(comment.createdAt)
                                 .toLocaleDateString("en-EN", 
                                 {day: "2-digit", month: "short", 
@@ -309,7 +324,7 @@
                                 
             const commentDiv = `<div class="comment-div in-comments-div">
                                   
-                                  <div class="user-name-in-comments-div in-comments-div">
+                                  <div class="user-name user-name-in-comments-div in-comments-div" creatorId="${user._id.toString()}">
                                     <img src="${user.profileImageURL}" 
                                          class="user-image-in-comment in-comments-div">
                                     <p class="user-name-in-comment in-comments-div">${user.name}</p>
@@ -319,12 +334,10 @@
                                     <p class="comment-content in-comments-div">${comment.content}</p>
                                   </div>
                                   <div class="comment-count-likes-date in-comments-div">
+                                    <a class="card-link comment-likes in-comments-div ${contentClass}" contentType="${contentType}" contentId="${contentId}">${comment.likedUserIds.length > 1 ? comment.likedUserIds.length + " likes" : comment.likedUserIds.length + " like"}</a>
                                     <a class="card-link comments-count"
-                                       parentId="${comment.userId}" 
-                                       parentType="comment">
-                                         ${comment.commentIds.length}
-                                    </a>
-                                    <a class="card-link comment-likes in-comments-div">${comment.likedUserIds.length}</a>
+                                       parentId="${comment._id.toString()}" 
+                                       parentType="comment">${comment.commentIds.length > 1 ? comment.commentIds.length + " comments" : comment.commentIds.length + " comment"}</a>
                                     <br />
                                     <a class="card-link comment-date in-comments-div">${commentDate}</a>
                                   </div>
@@ -361,7 +374,7 @@
                                 
           const commentDiv = `<div class="comment-div in-comments-div">
                                   
-                                  <div class="user-name-in-comments-div in-comments-div">
+                                  <div class="user-name user-name-in-comments-div in-comments-div">
                                     <img src="${user.profileImageURL}" 
                                          class="user-image-in-comment in-comments-div">
                                     <p class="user-name-in-comment in-comments-div">${user.name}</p>
@@ -371,12 +384,11 @@
                                     <p class="comment-content in-comments-div">${comment.content}</p>
                                   </div>
                                   <div class="comment-count-likes-date in-comments-div">
+                                    <a class="card-link comment-likes in-comments-div">${comment.likedUserIds.length > 1 ? comment.likedUserIds.length + " likes" : comment.likedUserIds.length + " like"}</a>
                                     <a class="card-link comments-count"
-                                       parentId="${comment.userId}" 
-                                       parentType="comment">
-                                         ${comment.commentIds.length}
-                                    </a>
-                                    <a class="card-link comment-likes in-comments-div">${comment.likedUserIds.length}</a>
+                                       parentId="${parentId}" 
+                                       parentType="${parentType}">${comment.commentIds.length > 1 ? comment.commentIds.length + " comments" : comment.commentIds.length + " comment"}</a>
+                                    <br />
                                     <br />
                                     <a class="card-link comment-date in-comments-div">${commentDate}</a>
                                   </div>
@@ -393,7 +405,7 @@
     
     $(document).on("click", function(event){
     
-      if(event.target.className.includes("comments-div") == false && event.target.className.includes("in-comments-div") == false && event.target.className.includes("comments-count") == false){
+      if(event.target.className.includes("comments-div") == false && event.target.className.includes("in-comments-div") == false && event.target.className.includes("comments-count") == false && event.target.className.includes("expand-profile") == false){
         $("#comments-div-of-post").css({"top": "-10000px", 
                                       "left": "-100000px"});
         
