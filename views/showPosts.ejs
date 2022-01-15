@@ -279,12 +279,13 @@
       $("#comments-div-of-post").css({"top": "0px", 
                                       "left": $(window).width()/2-500/2+"px"});
       
-      const parentId = $(this).attr("parentId");
-      const parentType = $(this).attr("parentType")
-      if(parentType == "post"){
-        const imageSrc = $(`#post-image-${parentId}`).attr("src");
-        const title = $(`#post-title-${parentId}`).text();
-        const context = $(`#post-context-${parentId}`).text();
+      const contentId = $(this).attr("contentId");
+      const contentType = $(this).attr("contentType")
+      
+      if(contentType == "post"){
+        const imageSrc = $(`#post-image-${contentId}`).attr("src");
+        const title = $(`#post-title-${contentId}`).text();
+        const context = $(`#post-context-${contentId}`).text();
 
         $("#post-image-in-comments-div").attr("src", imageSrc);
         $("#post-title-in-comments-div").text(title);
@@ -292,20 +293,35 @@
       }
       
       if($("#send-comment")){
-        $("#send-comment").attr("parentType", parentType);
-        $("#send-comment").attr("parentId", parentId);
+        $("#send-comment").attr("contentType", contentType);
+        $("#send-comment").attr("contentId", contentId);
       }
       
-      const url = `https://image-sharing-with-mongodb.glitch.me/get-comments/${parentType}/${parentId}`
+      $("#show-comments").empty();
+      
+      if(contentType == "comment"){
+        const parentType = $(this).attr("parentType")
+        const parentId = $(this).attr("parentId")
+        $("#show-comments").append(`<div id="back" class="btn btn-primary comments-count in-comments-div" contentType="${parentType}" contentId="${parentId}" style="width:100%; position:relative; z-index:10000"><--<div>`)
+      } else {
+        $("#show-comments").append(`<div id="close" class="btn btn-danger" style="position:relative; z-index:10000; width:100%">X</div>`)
+      }
+      
+      const url = `https://image-sharing-with-mongodb.glitch.me/get-comments/${contentType}/${contentId}`
       
       $.get(url).done(function(data){
         if(data && data.data){
           const viewerId = data.viewerId
           const commentsAndUsers = data.data
           
-          commentsAndUsers.forEach((commentAndUser) => {
+          commentsAndUsers.forEach((commentAndUser, i) => {
             const user = commentAndUser.user;
             const comment = commentAndUser.comment;
+            
+            if(contentType == "comment" && i == 0){
+              $("#back").attr("parentType", comment.parentType)
+              $("#back").attr("parentId", comment.parentId)
+            }
             
             var contentClass = viewerId && viewerId != comment.userId ? "like-content" : "no-liking-auth"
             
@@ -313,8 +329,6 @@
               contentClass += " liked-content"
             }
              
-            const contentType = "comment"
-            const contentId = comment._id
             
             const commentDate = new Date(comment.createdAt)
                                 .toLocaleDateString("en-EN", 
@@ -334,10 +348,12 @@
                                     <p class="comment-content in-comments-div">${comment.content}</p>
                                   </div>
                                   <div class="comment-count-likes-date in-comments-div">
-                                    <a class="card-link comment-likes in-comments-div ${contentClass}" contentType="${contentType}" contentId="${contentId}">${comment.likedUserIds.length > 1 ? comment.likedUserIds.length + " likes" : comment.likedUserIds.length + " like"}</a>
+                                    <a class="card-link comment-likes in-comments-div ${contentClass}" contentType="comment" contentId="${comment._id}">${comment.likedUserIds.length > 1 ? comment.likedUserIds.length + " likes" : comment.likedUserIds.length + " like"}</a>
                                     <a class="card-link comments-count"
-                                       parentId="${comment._id.toString()}" 
-                                       parentType="comment">${comment.commentIds.length > 1 ? comment.commentIds.length + " comments" : comment.commentIds.length + " comment"}</a>
+                                       contentId="${comment._id}"
+                                       contentType="comment"
+                                       parentId="${comment.parentId}" 
+                                       parentType="${comment.parentType}">${comment.commentIds.length > 1 ? comment.commentIds.length + " comments" : comment.commentIds.length + " comment"}</a>
                                     <br />
                                     <a class="card-link comment-date in-comments-div">${commentDate}</a>
                                   </div>
@@ -357,45 +373,13 @@
       event.preventDefault();
   
       const comment = $("#comment-input").val();
-      const parentType = $(this).attr("parentType");
-      const parentId = $(this).attr("parentId");
+      const contentType = $(this).attr("contentType");
+      const contentId = $(this).attr("contentId");
       
-      const url = `https://image-sharing-with-mongodb.glitch.me/comment/${parentType}/${parentId}`;
+      const url = `https://image-sharing-with-mongodb.glitch.me/comment/${contentType}/${contentId}`;
       $.post(url, { content: comment }).done(function(data){
         if(data){
-        console.log(data)
-          const user = data.user;
-          const comment = data.comment;
-          const commentDate = new Date(comment.createdAt)
-                                .toLocaleDateString("en-EN", 
-                                {day: "2-digit", month: "short", 
-                                year:"numeric", hour12: false, hour: "numeric", 
-                                minute: "numeric", second: "numeric"})
-                                
-          const commentDiv = `<div class="comment-div in-comments-div">
-                                  
-                                  <div class="user-name user-name-in-comments-div in-comments-div">
-                                    <img src="${user.profileImageURL}" 
-                                         class="user-image-in-comment in-comments-div">
-                                    <p class="user-name-in-comment in-comments-div">${user.name}</p>
-                                  </div>
-                                  
-                                  <div class="comment-in-comments-div in-comments-div">
-                                    <p class="comment-content in-comments-div">${comment.content}</p>
-                                  </div>
-                                  <div class="comment-count-likes-date in-comments-div">
-                                    <a class="card-link comment-likes in-comments-div">${comment.likedUserIds.length > 1 ? comment.likedUserIds.length + " likes" : comment.likedUserIds.length + " like"}</a>
-                                    <a class="card-link comments-count"
-                                       parentId="${parentId}" 
-                                       parentType="${parentType}">${comment.commentIds.length > 1 ? comment.commentIds.length + " comments" : comment.commentIds.length + " comment"}</a>
-                                    <br />
-                                    <br />
-                                    <a class="card-link comment-date in-comments-div">${commentDate}</a>
-                                  </div>
-                                
-                              </div>`
-                                
-          $("#show-comments").prepend(commentDiv)
+          $(`.comments-count[contentId=${contentId}]`).click()
         }
       }).fail(function(xhr, status, error){
         console.log("fail")

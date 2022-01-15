@@ -20,23 +20,23 @@
   <% if(viewerId && viewerId != creator._id.toString() && post.likedUserIds.indexOf(viewerId) == -1) { %>
     <div class="card-body like-and-comment-div" style="margin:auto; display:inline-block">
       <a id="like-post-<%= post._id %>" class="card-link like-content" style="display:inline-block"  contentType="post" contentId="<%= post._id %>"><%= post.likedUserIds.length %> <%= post.likedUserIds.length > 1 ? "likes" : "like" %></a>
-      <a id="comment-<%= post._id %>"class="card-link comment comments-count" style="display:inline-block" parentType="post" parentId="<%= post._id %>"><%= post.commentIds.length %> <%= post.commentIds.length > 1 ? "comments" : "comment" %></a>
+      <a id="comment-<%= post._id %>"class="card-link comment comments-count" style="display:inline-block" contentType="post" contentId="<%= post._id %>"><%= post.commentIds.length %> <%= post.commentIds.length > 1 ? "comments" : "comment" %></a>
     </div>
   <% } else if(viewerId && viewerId == creator._id.toString()) { %>
     <div class="card-body users-like-comment-remove-post-div" style="margin: auto">
       <a id="user-post-likes-<%= post._id %>" class="card-link likes-count"><%= post.likedUserIds.length %> <%= post.likedUserIds.length > 1 ? "likes" : "like" %></a>
-      <a id="user-post-comments-<%= post._id %>" class="card-link comments-count" parentType="post" parentId="<%= post._id %>"><%= post.commentIds.length %> <%= post.commentIds.length > 1 ? "comments" : "comment" %></a>
+      <a id="user-post-comments-<%= post._id %>" class="card-link comments-count" contentType="post" contentId="<%= post._id %>"><%= post.commentIds.length %> <%= post.commentIds.length > 1 ? "comments" : "comment" %></a>
       <a href="/delete-post/<%= post._id %>" class="card-link">Remove Post</a>
     </div>  
   <% } else if(viewerId && post.likedUserIds.indexOf(viewerId) != -1) { %>
     <div class="card-body like-and-comment-div" style="margin:auto; padding-bottom:1px">
       <a id="like-post-<%= post._id %>" class="card-link like-content liked-content" style="display:inline-block"  contentType="post" contentId="<%= post._id %>"><%= post.likedUserIds.length %> <%= post.likedUserIds.length > 1 ? "likes" : "like" %></a>
-      <a id="comment-<%= post._id %>" class="card-link comment comments-count" style="display:inline-block" parentType="post" parentId="<%= post._id %>"><%= post.commentIds.length %> <%= post.commentIds.length > 1 ? "comments" : "comment" %></a>
+      <a id="comment-<%= post._id %>" class="card-link comment comments-count" style="display:inline-block" contentType="post" contentId="<%= post._id %>"><%= post.commentIds.length %> <%= post.commentIds.length > 1 ? "comments" : "comment" %></a>
     </div>
   <% } else if(!viewerId){ %>
     <div class="card-body" style="text-align:center; padding-bottom:1px">
       <a id="post-likes-<%= post._id %>" class="card-link likes-count"><%= post.likedUserIds.length %> <%= post.likedUserIds.length > 1 ? "likes" : "like" %></a>
-      <a id="post-comments-<%= post._id %>" class="card-link comments-count" parentType="post" parentId="<%= post._id %>"><%= post.commentIds.length %> <%= post.commentIds.length > 1 ? "comments" : "comment" %></a>
+      <a id="post-comments-<%= post._id %>" class="card-link comments-count" contentType="post" contentId="<%= post._id %>"><%= post.commentIds.length %> <%= post.commentIds.length > 1 ? "comments" : "comment" %></a>
       <hr />
       <a href="/register" class="card-link">Register now to like and comment on posts & follow your favorite users!</a>
     </div>
