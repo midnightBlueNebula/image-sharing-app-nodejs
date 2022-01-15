@@ -381,9 +381,18 @@ module.exports = function(app, db) {
     const parentId = req.params.parentId
     const viewerId = req.session.user_id
     
-    callPromise(getCommentsOfParent(db, "image-app-comments", parentId)).then(function(comments){
-      getUserPerCommentThenSend(res, viewerId, comments, 0, [])
-    })
+    if(parentType == "comment"){
+      callPromise(getCommentById(db, "image-app-comments", parentId)).then(function(parentComment){
+        callPromise(getCommentsOfParent(db, "image-app-comments", parentId)).then(function(comments){
+          comments.unshift(parentComment)
+          getUserPerCommentThenSend(res, viewerId, comments, 0, [])
+        })
+      })
+    } else {
+      callPromise(getCommentsOfParent(db, "image-app-comments", parentId)).then(function(comments){
+        getUserPerCommentThenSend(res, viewerId, comments, 0, [])
+      })
+    }
   })
   
   
