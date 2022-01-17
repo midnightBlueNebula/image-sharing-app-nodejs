@@ -179,6 +179,20 @@
         }
       })
       
+      const feedURL = "https://image-sharing-with-mongodb.glitch.me/feed"
+      
+      
+        $.get(feedURL).done(function(data){
+          console.log(data)
+          if(data){
+            $("#feed").append(data);
+          }
+        }).fail(function(xhr, status, error){
+          console.log("fail")
+          console.log("Result: " + status + " " + error + " " + xhr.status + " " + xhr.statusText)
+        })
+      
+      
       
     
     
