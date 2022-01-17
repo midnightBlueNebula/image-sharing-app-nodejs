@@ -950,21 +950,19 @@ module.exports = function(app, db) {
     });
   */
 
-  const getFollowedUsers = (db, cluster, userId) => {
+  const getFollowedUsers = (db, collection, userId) => {
     return new Promise((resolve, reject) => {
-      callPromise(getUserById(db, cluster, userId)).then(function(user) {
-        if(user){
-          callPromise(getUserByIds(db, cluster, user.followedIds.map((i) => ObjectId(i))).then(function(followedUsers){
-            if(followedUsers){
-              resolve(followedUsers)
-            } else {
-              resolve(false)
-            }
-          }))
-        } else {
-          resolve(false)
-        }
-      });
+      db.collection(collection)
+        .find({ followerIds: userId })
+        .toArray((error,result) => {
+          if(error){
+            reject(error)
+          } else if(result){
+            resolve(result)
+          } else {
+            resolve(false)
+          }
+      })
     });
   };
   
@@ -980,9 +978,9 @@ module.exports = function(app, db) {
       callPromise(getFollowedUsers(db, "image-app-users", userId)).then(function(users) {
         if(users){
           let date = new Date();
-          date = date.setHour(date.getHour()-6)
+          date = new Date(date.setHours(date.getHours()-6))
           
-          const userIds = users.map((u) => u.creatorId)
+          const userIds = users.map((u) => u._id.toString())
           
           callPromise(getPostsOfUser(db, "image-app-posts", userIds, date, true)).then(function(posts) {
             if(posts){

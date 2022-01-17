@@ -16,9 +16,9 @@
   <body>
     <div id="creator-profile" class="card user-card user-name expand-profile" style="height: 10rem; width: 15rem; position: absolute; top:-1000px; left: -1000px; z-index: 10000; display:flex; flex-wrap:wrap; flex-direction:row">
       <img id="creator-img" class="card-img-top expand-profile" src="" style="height: 50%; width: 50%">
-      <p class="card-title expand-profile" id="creator-about" style="width: 50%; margin:auto"></p>
-      <p id="follow-button" class="card-link change-follow-status expand-profile" style="margin: 1rem"></p>
-      <p id="follower-count" class="expand-profile" style="margin: 1rem"></p>
+      <p class="card-title expand-profile" id="creator-about" style="width: 50%; height: 50%; text-align:center; margin:auto"></p>
+      <p id="follow-button" class="card-link change-follow-status expand-profile" style="margin: auto"></p>
+      <p id="follower-count" class="expand-profile" style="margin: auto"></p>
     </div>
 
     <div id="comments-div-of-post" class="card comments-div" style="height: 100vh; width: 33%; position: absolute; top:-1000px; left: -1000px; z-index: 9999; overflow-y: auto">
@@ -132,6 +132,7 @@
     var mouseBack = false
     
     $(document).on("mouseover", ".user-name", function(event){
+      event.stopPropagation()
       mouseBack = true
       const url = `https://image-sharing-with-mongodb.glitch.me/getUserJSON/${$(this).attr("creatorId")}`
       $.get(url).done(function(data, status){
@@ -142,8 +143,10 @@
           const image = data.image
           const followerIds = data.followerIds
           const viewerId = data.viewerId
+          const rect = event.target.getBoundingClientRect()
+          const parentRect = event.target.parentElement.getBoundingClientRect();
           
-          $("#creator-profile").css({"top": `${event.clientY - 100}px`, "left": `${event.clientX}px`})
+          $("#creator-profile").css({"top": `${rect.top - rect.height/2}px`, "left": `${parentRect.left-rect.width}px`})
           $("#creator-img").attr("src", data.image)
           $("#creator-about").text(data.about)
           
