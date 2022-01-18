@@ -303,9 +303,7 @@
       $("#show-comments").empty();
       
       if(contentType == "comment"){
-        const parentType = $(this).attr("parentType")
-        const parentId = $(this).attr("parentId")
-        $("#show-comments").append(`<div id="back" class="btn btn-primary comments-count in-comments-div" contentType="${parentType}" contentId="${parentId}" style="width:100%; position:relative; z-index:10000"><--<div>`)
+        $("#show-comments").append(`<div id="back" class="btn btn-primary comments-count in-comments-div" style="width:100%; position:relative; z-index:10000"><--<div>`)
       } else {
         $("#show-comments").append(`<div id="close" class="btn btn-danger" style="position:relative; z-index:10000; width:100%">X</div>`)
       }
@@ -322,8 +320,8 @@
             const comment = commentAndUser.comment;
             
             if(contentType == "comment" && i == 0){
-              $("#back").attr("parentType", comment.parentType)
-              $("#back").attr("parentId", comment.parentId)
+              $("#back").attr("contentType", comment.parentType)
+              $("#back").attr("contentId", comment.parentId)
             }
             
             var contentClass = viewerId && viewerId != comment.userId ? "like-content" : "no-liking-auth"
@@ -354,9 +352,7 @@
                                     <a class="card-link comment-likes in-comments-div ${contentClass}" contentType="comment" contentId="${comment._id}">${comment.likedUserIds.length > 1 ? comment.likedUserIds.length + " likes" : comment.likedUserIds.length + " like"}</a>
                                     <a class="card-link comments-count"
                                        contentId="${comment._id}"
-                                       contentType="comment"
-                                       parentId="${comment.parentId}" 
-                                       parentType="${comment.parentType}">${comment.commentIds.length > 1 ? comment.commentIds.length + " comments" : comment.commentIds.length + " comment"}</a>
+                                       contentType="comment">${comment.commentIds.length > 1 ? comment.commentIds.length + " comments" : comment.commentIds.length + " comment"}</a>
                                     <br />
                                     <a class="card-link comment-date in-comments-div">${commentDate}</a>
                                   </div>
