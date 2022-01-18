@@ -124,12 +124,7 @@
       
       
       <div class="card"  id="feed">
-        <img class="card-img-top" src="..." alt="">
-        <div class="card-body">
-          <h5 class="card-title">Feed</h5>
-          <p class="card-text">This is a wider card with supporting text below as a natural lead-in to additional content. This card has even longer content than the first to show that equal height action.</p>
-          <p class="card-text"><small class="text-muted">Last updated 3 mins ago</small></p>
-        </div> 
+        
       </div>
       </div>
     </div>
@@ -185,7 +180,39 @@
         $.get(feedURL).done(function(data){
           console.log(data)
           if(data){
-            $("#feed").append(data);
+            data.forEach((post, index) => {
+              const title = post.title;
+              const imageURL = post.imageURL;
+              const context = post.context;
+              const creatorId = post.creatorId;
+              
+              const postDate = new Date(post.createdAt)
+              const postDateFormated = postDate.toLocaleDateString("en-EN", {day: "2-digit", month: "short", year:"numeric", hour12: false, hour: "numeric", minute: "numeric", second: "numeric"})
+              
+              const postDiv = `<div class="card post-card" id="post-card-${post._id}" style="width: 100%; margin:auto;"> 
+      
+                <img class="card-img-top post-image" id="post-image-${post._id}" src="${post.imageURL}">
+                <div class="card-img-overlay">
+                  <h5 class="card-title post-title" id="post-title-${post._id}">${post.title}</h5>
+                </div>
+                <div class="card-body">
+                  <p class="card-text post-context" id="post-context-${post._id}">${post.context}</p>
+                </div>
+                <hr/>
+                <div class="row user-name" style="margin:auto;" creatorId="${post.creatorId}">
+                  <div class="col-lg user-name-col">${post.creatorId}</div>
+                  <div class="col-lg date-col" style="width:300px">${postDateFormated}</div>
+                </div>
+                <hr />
+                <div class="card-body like-and-comment-div" style="margin:auto; display:inline-block">
+                  <a id="like-post-${post._id}" class="card-link like-content" style="display:inline-block"  contentType="post" contentId="${post._id}">${post.likedUserIds.length > 1 ? post.likedUserIds.length + " likes" : post.likedUserIds.length + " like"}</a>
+                  <a id="comment-${post._id}"class="card-link comment comments-count" style="display:inline-block" contentType="post" contentId="${post._id}">${post.commentIds.length > 1 ? post.commentIds.length + " comments" : post.commentIds.length + " comment"}</a>
+                </div>
+              </div>`
+
+              $("#feed").prepend(postDiv);
+            })
+            
           }
         }).fail(function(xhr, status, error){
           console.log("fail")
