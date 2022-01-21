@@ -124,7 +124,8 @@
       
       
       <div class="card"  id="feed">
-        
+        <h5 id="feed-title" class="btn btn-info card-title mt-auto sticky-top">Feed</h5>
+        <div id="feed-posts" class="card"></div>
       </div>
       </div>
     </div>
@@ -134,8 +135,7 @@
 			    crossorigin="anonymous">
     </script>
     
-    <script type="text/javascript" src="/profileandposts.js">
-    </script>
+    <script type="text/javascript" src="/profileandposts.js"></script>
      
     <script>
 
@@ -174,13 +174,20 @@
         }
       })
       
-      const feedURL = "https://image-sharing-with-mongodb.glitch.me/feed"
+      var feedDate = new Date();
+      feedDate = new Date(feedDate.setHours(feedDate.getHours()-6));
       
-      
-        $.get(feedURL).done(function(data){
+      const getFeed = () => {
+        const feedURL = "https://image-sharing-with-mongodb.glitch.me/feed"
+        
+        $.post(feedURL, { dateFilter: feedDate }).done(function(data){
           console.log(data)
+          data = data.reverse();
+          
           if(data){
-            data.forEach((post, index) => {
+            data.forEach((d, i) => {
+              const post = d.post;
+              const user = d.creator;
               const title = post.title;
               const imageURL = post.imageURL;
               const context = post.context;
@@ -190,7 +197,6 @@
               const postDateFormated = postDate.toLocaleDateString("en-EN", {day: "2-digit", month: "short", year:"numeric", hour12: false, hour: "numeric", minute: "numeric", second: "numeric"})
               
               const postDiv = `<div class="card post-card" id="post-card-${post._id}" style="width: 100%; margin:auto;"> 
-      
                 <img class="card-img-top post-image" id="post-image-${post._id}" src="${post.imageURL}">
                 <div class="card-img-overlay">
                   <h5 class="card-title post-title" id="post-title-${post._id}">${post.title}</h5>
@@ -199,8 +205,8 @@
                   <p class="card-text post-context" id="post-context-${post._id}">${post.context}</p>
                 </div>
                 <hr/>
-                <div class="row user-name" style="margin:auto;" creatorId="${post.creatorId}">
-                  <div class="col-lg user-name-col">${post.creatorId}</div>
+                <div class="row user-name" style="margin:auto;" creatorId="${user._id}">
+                  <div class="col-lg user-name-col">${user.name}</div>
                   <div class="col-lg date-col" style="width:300px">${postDateFormated}</div>
                 </div>
                 <hr />
@@ -210,15 +216,22 @@
                 </div>
               </div>`
 
-              $("#feed").prepend(postDiv);
+              $("#feed-posts").prepend(postDiv);
             })
+            
             
           }
         }).fail(function(xhr, status, error){
           console.log("fail")
           console.log("Result: " + status + " " + error + " " + xhr.status + " " + xhr.statusText)
         })
+        
+        feedDate = new Date();
+      }
       
+      getFeed()
+        
+      var feedInterval = setInterval(getFeed,1000)
       
       
     
