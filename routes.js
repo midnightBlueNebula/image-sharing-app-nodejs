@@ -435,16 +435,17 @@ module.exports = function(app, db) {
     });
   })
   
-  app.get("/feed", (req, res) => {
+  app.post("/feed", (req, res) => {
     if (!loggedIn(req.session.user_id)) {
       res.redirect("/");
     }
     
     const userId = req.session.user_id
+    const dateFilter = new Date(req.body.dateFilter)
     
-    callPromise(getUserFeed(db, "image-app-users", userId)).then(function(feedPosts) {
+    callPromise(getUserFeed(db, "image-app-users", userId, dateFilter)).then(function(feedPosts) {
       if(feedPosts){
-        res.json(feedPosts)
+        getCreatorPerPostThenSendJSON(res, feedPosts, 0, [])
       } else {
         res.send(false)
       }
@@ -842,6 +843,22 @@ module.exports = function(app, db) {
     }
   }
   
+  //call getCreatorPerPostThenSendJSON as shown beneath
+  /* 
+    getCreatorPerPostThenSendJSON(res, feedPosts, 0, [])
+  */
+  
+  const getCreatorPerPostThenSendJSON = (res, feedPosts, index=0, data=[]) => {
+    if(feedPosts[index]){
+      callPromise(getUserById(db, "image-app-users", feedPosts[index].creatorId)).then(function(creator){
+        data.push({ post: feedPosts[index], creator: creator })
+        getCreatorPerPostThenSendJSON(res, feedPosts, ++index, data)
+      })
+    } else {
+      res.json(data)
+    }
+  }
+  
 
   //call isAdmin as shown beneath
   /* 
@@ -968,21 +985,18 @@ module.exports = function(app, db) {
   
   //call getUserFeed as shown beneath
   /* 
-    callPromise(getUserFeed(db, "image-app-users", userId)).then(function(result) {
+    callPromise(getUserFeed(db, "image-app-users", userId, dateFilter)).then(function(result) {
       use received data here...
     });
   */
 
-  const getUserFeed = (db, cluster, userId) => {
+  const getUserFeed = (db, cluster, userId, dateFilter) => {
     return new Promise((resolve, reject) => {
-      callPromise(getFollowedUsers(db, "image-app-users", userId)).then(function(users) {
-        if(users){
-          let date = new Date();
-          date = new Date(date.setHours(date.getHours()-6))
+      callPromise(getUserById(db, "image-app-users", userId)).then(function(user) {
+        if(user){
+          const userIds = user.followedIds;
           
-          const userIds = users.map((u) => u._id.toString())
-          
-          callPromise(getPostsOfUser(db, "image-app-posts", userIds, date, true)).then(function(posts) {
+          callPromise(getPostsOfUser(db, "image-app-posts", userIds, dateFilter, true)).then(function(posts) {
             if(posts){
               resolve(posts)
             } else {
