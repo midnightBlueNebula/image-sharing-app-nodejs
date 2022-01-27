@@ -48,9 +48,15 @@
       
       <%- include('navPartial', {viewerId: viewerId}) %>
       
+      <div id="select-menu" style="display:none; font-size:14px; text-align:center; height:20px">
+        <a id="select-liked" class="menu-option">Liked Posts</a>
+        <a id="select-profile" class="menu-option">Profile</a>
+        <a id="select-feed" class="menu-option">Feed</a>
+      </div>
+      
       <div id="profile-div" class="card-group">
         <div class="card"  id="liked-posts">
-          <h5 id="liked-posts-title" class="btn card-title mt-auto sticky-top">Liked Posts</h5>
+          <h5 id="liked-posts-title" class="btn card-title mt-auto sticky-top" style="width:100%">Liked Posts</h5>
             <% for(var i=0; i<data.length; ++i) { %>
               <div class="liked-posts-div">
                 <%- include('showPostPartial', { creator: data[i].creator, post: data[i].post, viewerId: viewerId }); %>
@@ -124,7 +130,7 @@
       
       
       <div class="card"  id="feed">
-        <h5 id="feed-title" class="btn btn-info card-title mt-auto sticky-top">Feed</h5>
+        <h5 id="feed-title" class="btn btn-info card-title mt-auto sticky-top" style="width:100%">Feed</h5>
         <div id="feed-posts" class="card"></div>
       </div>
       </div>
@@ -138,10 +144,39 @@
     <script type="text/javascript" src="/profileandposts.js"></script>
      
     <script>
-    
+      $("#to-profile").remove();
+      
       var navBar = document.querySelector("#nav-bar");
       var profileDiv = document.querySelector("#profile-div");
       profileDiv.style.height = window.innerHeight - navBar.getBoundingClientRect().height + "px";
+      
+      window.addEventListener("load", (event) => {
+        if(window.innerWidth < 500){
+          $("#nav-bar").css("font-size", "12px");
+          $("#nav-bar").css("height", "16px");
+          $("#select-menu").css("display", "block");
+          $("#liked-posts").css("display", "none");
+          $("#feed").css("display", "none");
+          $("#to-new-posts").text("New");
+          $("#to-top-posts").text("Best");
+          $("#to-about").remove();
+          $("#to-create-new-post").text("Create Post");
+          
+        }
+      })
+      
+      $(".menu-option").on("click", function(event){
+        $("#profile-card").css("display", "none");
+        $("#liked-posts").css("display", "none");
+        $("#feed").css("display", "none");
+        if(event.target.id == "select-liked"){
+          $("#liked-posts").css("display", "block");
+        } else if(event.target.id == "select-profile"){
+          $("#profile-card").css("display", "block");
+        } else {
+          $("#feed").css("display", "block");
+        }
+      })
 
       $("#image-input").on("input", function(event){
         let regex = /(\.jpg$)|(\.jpeg$)|(\.png$)/
@@ -177,6 +212,7 @@
           $("#profile-posts").css("display", "none")
         }
       })
+      
       
       var feedDate = new Date();
       feedDate = new Date(feedDate.setHours(feedDate.getHours()-6));

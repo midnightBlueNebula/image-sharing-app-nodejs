@@ -1,15 +1,15 @@
 <div id="nav-bar">
   <nav class="nav justify-content-end">
-    <a class="nav-link" href="#">About</a>
-    <a class="nav-link" href="/new-posts">New Posts</a>
-    <a class="nav-link" href="/top-posts">Top Posts</a>
+    <a id="to-about" class="nav-link" href="#">About</a>
+    <a id="to-new-posts" class="nav-link" href="/new-posts">New Posts</a>
+    <a id="to-top-posts" class="nav-link" href="/top-posts">Top Posts</a>
     
     <% if(viewerId){ %>
-      <a class="nav-link" href="/post">Create a New Post</a>
-      <a class="nav-link" href="/profile">Profile</a>
-      <a class="nav-link" href="/logout" id="logout-button">Logout</a>
+      <a id="to-create-new-post" class="nav-link" href="/post">Create a New Post</a>
+      <a id="to-profile" class="nav-link" href="/profile">Profile</a>
+      <a id="to-logout" class="nav-link" href="/logout" id="logout-button">Logout</a>
     <% } else { %>
-      <a class="nav-link" href="/" id="login-button">Login</a>
+      <a id="to-login" class="nav-link" href="/" id="login-button">Login</a>
     <% } %>
   </nav>
 </div>
