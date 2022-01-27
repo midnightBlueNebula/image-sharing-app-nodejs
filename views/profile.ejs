@@ -48,7 +48,7 @@
       
       <%- include('navPartial', {viewerId: viewerId}) %>
       
-      <div class="card-group">
+      <div id="profile-div" class="card-group">
         <div class="card"  id="liked-posts">
           <h5 id="liked-posts-title" class="btn card-title mt-auto sticky-top">Liked Posts</h5>
             <% for(var i=0; i<data.length; ++i) { %>
@@ -138,6 +138,10 @@
     <script type="text/javascript" src="/profileandposts.js"></script>
      
     <script>
+    
+      var navBar = document.querySelector("#nav-bar");
+      var profileDiv = document.querySelector("#profile-div");
+      profileDiv.style.height = window.innerHeight - navBar.getBoundingClientRect().height + "px";
 
       $("#image-input").on("input", function(event){
         let regex = /(\.jpg$)|(\.jpeg$)|(\.png$)/

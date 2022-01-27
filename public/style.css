@@ -65,7 +65,7 @@ textarea{
 
 #profile-card{
   overflow-y: scroll;
-  height: 85vh;
+  height: 100%;;
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
@@ -76,7 +76,7 @@ textarea{
 
 #liked-posts{
   overflow-y: scroll;
-  height: 85vh;
+  height: 100%;
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
@@ -87,7 +87,7 @@ textarea{
 
 #feed{
   overflow-y: scroll;
-  height: 85vh;
+  height: 100%;
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
