@@ -64,6 +64,17 @@
   </script>
   
   <script src="/profileandposts.js"></script>
+  
+  <script>
+    const handleWindowSize = (event) => { 
+      if(window.innerWidth < 500){
+        $("#show-posts-div").css("width", "80%");
+      }  
+    };
+    
+    window.addEventListener("load", handleWindowSize)
+    window.addEventListener("resize", handleWindowSize)
+  </script>
 </html>
 
 
