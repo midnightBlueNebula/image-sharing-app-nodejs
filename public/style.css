@@ -2,6 +2,10 @@ body{
   overflow: visible;
 }
 
+#nav-bar{
+  height: 40px;
+}
+
 .card-group{
   height: 80vh;
 }

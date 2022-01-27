@@ -66,10 +66,16 @@
   <script src="/profileandposts.js"></script>
   
   <script>
+    var navBar = document.querySelector("#nav-bar");
+    var postDiv = document.querySelector("#posts-div");
+    postDiv.style.height = window.innerHeight - navBar.getBoundingClientRect().height + "px";
+    
     const handleWindowSize = (event) => { 
       if(window.innerWidth < 500){
         $("#show-posts-div").css("width", "80%");
-      }  
+      } else {
+        $("#show-posts-div").css("width", "33%");
+      } 
     };
     
     window.addEventListener("load", handleWindowSize)
