@@ -70,12 +70,16 @@
     var postDiv = document.querySelector("#posts-div");
     postDiv.style.height = window.innerHeight - navBar.getBoundingClientRect().height + "px";
     
-    const handleWindowSize = (event) => { 
+    const handleWindowSize = (event) => {
       if(window.innerWidth < 500){
         $("#show-posts-div").css("width", "80%");
+        $("#nav-bar").css("font-size", "12px")
       } else {
         $("#show-posts-div").css("width", "33%");
-      } 
+        $("#nav-bar").css("font-size", "17px")
+      }
+      
+      postDiv.style.height = window.innerHeight - navBar.getBoundingClientRect().height + "px";
     };
     
     window.addEventListener("load", handleWindowSize)
