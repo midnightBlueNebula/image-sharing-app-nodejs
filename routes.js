@@ -5,6 +5,7 @@ const h = require("./helper.js");
 const fs = require('fs');
 const path = require('path');
 const saltRounds = 12;
+const hello = require("./controllers/usersController.js");
 
 module.exports = function(app, db) {
   app.use(
@@ -16,22 +17,23 @@ module.exports = function(app, db) {
   );
 
   app.get("/", function(request, response) {
-    if (loggedIn(request.session.user_id)) {
+    if (h.loggedIn(request.session.user_id)) {
       response.redirect("/profile");
     }
+    
     response.render(`${__dirname}/views/index.ejs`);
   });
 
   app
     .route("/register")
     .get((req, res) => {
-      if (loggedIn(req.session.user_id)) {
+      if (h.loggedIn(req.session.user_id)) {
         res.redirect("/profile");
       }
       res.sendFile(`${__dirname}/views/register.html`);
     })
     .post((req, res) => {
-      if (loggedIn(req.session.user_id)) {
+      if (h.loggedIn(req.session.user_id)) {
         res.redirect("/profile");
       }
 
@@ -83,7 +85,7 @@ module.exports = function(app, db) {
     });
 
   app.post("/login", (req, res) => {
-    if (loggedIn(req.session.user_id)) {
+    if (h.loggedIn(req.session.user_id)) {
       res.redirect("/profile");
     }
     const email = h.cleanseString(req.body.email);
@@ -103,7 +105,7 @@ module.exports = function(app, db) {
           if (outcome) {
             req.session.user_id = result._id;
             req.session.user_name = result.name;
-            back(req, res)
+            h.back(req, res)
           } else {
             res.send("Wrong password.");
           }
@@ -114,12 +116,12 @@ module.exports = function(app, db) {
 
   app.get("/logout", (req, res) => {
     req.session.user_id = undefined;
-    back(req, res)
+    h.back(req, res)
   });
 
   app.get("/profile", (req, res) => {
     const id = req.session.user_id;
-    if (!loggedIn(id)) {
+    if (!h.loggedIn(id)) {
       res.redirect("/");
     }
     
@@ -128,7 +130,7 @@ module.exports = function(app, db) {
     callPromise(getUserById(db, "image-app-users", id)).then(function(user) {
       callPromise(getPostsOfUser(db, "image-app-posts", user._id.toString())).then(function(posts) {
         callPromise(getLikedPostsByUser(db, "image-app-posts", user._id.toString())).then(function(likedPosts) {
-          getCreatorPerPostThenRender(renderWithData, res, "profile.ejs", 
+          getCreatorPerPostThenRender(h.renderWithData, res, "profile.ejs", 
                                       { user: user, 
                                         posts: posts, 
                                         viewerId: req.session.user_id }, 
@@ -139,7 +141,7 @@ module.exports = function(app, db) {
   });
   
   app.post("/addProfileImage", (req, res) => {
-    if (!loggedIn(req.session.user_id)) {
+    if (!h.loggedIn(req.session.user_id)) {
       res.redirect("/");
     }
     
@@ -152,7 +154,7 @@ module.exports = function(app, db) {
   })
   
   app.post("/changeProfileImage", (req, res) => {
-    if (!loggedIn(req.session.user_id)) {
+    if (!h.loggedIn(req.session.user_id)) {
       res.redirect("/");
     }
     
@@ -163,7 +165,7 @@ module.exports = function(app, db) {
   })
   
   app.post("/addProfileDescription", (req, res) => {
-    if (!loggedIn(req.session.user_id)) {
+    if (!h.loggedIn(req.session.user_id)) {
       res.redirect("/");
     }
     
@@ -176,7 +178,7 @@ module.exports = function(app, db) {
   })
   
   app.get("/changeProfileDescription", (req, res) => {
-    if (!loggedIn(req.session.user_id)) {
+    if (!h.loggedIn(req.session.user_id)) {
       res.redirect("/");
     }
     
@@ -187,19 +189,19 @@ module.exports = function(app, db) {
   })
 
   app.get("/post", (req, res) => {
-    if (!loggedIn(req.session.user_id)) {
+    if (!h.loggedIn(req.session.user_id)) {
       res.redirect("/");
     }
     
     const id = req.session.user_id
     
     callPromise(getUserById(db, "image-app-users", id)).then(function(result) {
-      renderWithData(res, "post.ejs", { user: result, viewerId: result._id.toString() });
+      h.renderWithData(res, "post.ejs", { user: result, viewerId: result._id.toString() });
     });
   });
 
   app.post("/post", (req, res) => {
-    if (!loggedIn(req.session.user_id)) {
+    if (!h.loggedIn(req.session.user_id)) {
       res.redirect("/");
     }
     
@@ -215,7 +217,7 @@ module.exports = function(app, db) {
   });
 
   app.get("/delete-post/:id", (req, res) => {
-    if (!loggedIn(req.session.user_id)) {
+    if (!h.loggedIn(req.session.user_id)) {
       res.redirect("/");
     }
     
@@ -226,13 +228,13 @@ module.exports = function(app, db) {
     callPromise(isAdmin(db, "image-app-users", req.session.user_id)).then(function(admin) {
       if(admin) {
         callPromise(deletePost(db, "image-app-posts", req.params.id)).then(function(post) {
-            back(req, res)  
+            h.back(req, res)  
         })
       } else {
         callPromise(isCreator(db, "image-app-posts", req.params.id, req.session.user_id)).then(function(creator) {
           if(creator) {
             callPromise(deletePost(db, "image-app-posts", req.params.id)).then(function(post) {
-              back(req, res)
+              h.back(req, res)
             })
           } else {
             res.redirect("/")
@@ -242,8 +244,19 @@ module.exports = function(app, db) {
     })
   });
   
+  
+  app.get("/random-post", (req, res) => {
+    db.collection("image-app-posts").aggregate([{ $sample: { size: 5 } }]).toArray((error, result)=>{
+      if(result){
+        getCreatorPerPostThenSendJSON(res, result, 0, []);
+      } else {
+        res.send(false)
+      }
+    })
+  });
+  
   app.post("/like/:content/:contentId", (req, res) => {
-    if (!loggedIn(req.session.user_id)) {
+    if (!h.loggedIn(req.session.user_id)) {
       res.redirect("/");
     }
     
@@ -259,7 +272,7 @@ module.exports = function(app, db) {
   });
   
   app.post("/regret-like/:content/:contentId", (req, res) => {
-    if (!loggedIn(req.session.user_id)) {
+    if (!h.loggedIn(req.session.user_id)) {
       res.redirect("/");
     }
     
@@ -282,7 +295,7 @@ module.exports = function(app, db) {
       if(post){
         callPromise(getUserById(db, "image-app-users", post.creatorId)).then(function(creator) {
           let data = [{post: post, creator: creator}]
-          renderWithData(res, "showPosts.ejs", { data: data, viewerId: req.session.user_id });
+          h.renderWithData(res, "showPosts.ejs", { data: data, viewerId: req.session.user_id });
         });
       } else {
         res.send("/no data available")
@@ -300,7 +313,7 @@ module.exports = function(app, db) {
     callPromise(getPostsByDate(db, "image-app-posts", date)).then(function(posts) {
       if(posts){
         var data = []
-        getCreatorPerPostThenRender(renderWithData, res, "showPosts.ejs", 
+        getCreatorPerPostThenRender(h.renderWithData, res, "showPosts.ejs", 
                                     { viewerId: req.session.user_id }, posts, 0, data)
       } else {
         res.send("/no data available")
@@ -315,7 +328,7 @@ module.exports = function(app, db) {
     callPromise(getTopLikedPosts(db, "image-app-posts", date)).then(function(posts) {
       if(posts){
         var data = []
-        getCreatorPerPostThenRender(renderWithData, res, "showPosts.ejs", 
+        getCreatorPerPostThenRender(h.renderWithData, res, "showPosts.ejs", 
                                     { viewerId: req.session.user_id }, posts, 0, data)
       } else {
         res.send("/no data available")
@@ -324,7 +337,7 @@ module.exports = function(app, db) {
   });
   
   app.post("/comment/:parentType/:parentId", (req, res) => {
-    if (!loggedIn(req.session.user_id)) {
+    if (!h.loggedIn(req.session.user_id)) {
       res.redirect("/");
     }
     
@@ -348,28 +361,32 @@ module.exports = function(app, db) {
     });
   })
   
-  app.get("/delete-comment/:parentType/:commentId", (req, res) => {
-    if (!loggedIn(req.session.user_id)) {
+  app.get("/delete-comment/:parentType/:parentId/:commentId", (req, res) => {
+    if (!h.loggedIn(req.session.user_id)) {
       res.redirect("/");
     }
     
-    const parentType = req.params.parentType
-    const commentId = req.params.commentId
-    const userId = req.session.user_ıd
+    const parentType = req.params.parentType;
+    const parentId = req.params.parentId;
+    const commentId = req.params.commentId;
+    const userId = req.session.user_id;
     
     callPromise(isAdmin(db, "image-app-users", userId)).then(function(admin) {
       if(admin){
-        callPromise(deleteComment(db, "image-app-comments", parentType, commentId)).then(function(result) {
-          res.json(result)
+        callPromise(deleteComment(db, "image-app-comments", parentType, parentId, commentId)).then(function(result) {
+          //res.json(result)
+          h.back(req, res);
         });
       } else {
         callPromise(isCommentor(db, "image-app-comments", commentId, userId)).then(function(commentor) {
           if(commentor){
-            callPromise(deleteComment(db, "image-app-comments", parentType, commentId)).then(function(result) {
-              res.json(result)
+            callPromise(deleteComment(db, "image-app-comments", parentType, parentId, commentId)).then(function(result) {
+              //res.json(result)
+              h.back(req,res);
             });
           } else {
             res.redirect("/")
+            h.back(req,res);
           }
         })
       }
@@ -398,7 +415,7 @@ module.exports = function(app, db) {
   
   
   app.post("/follow/:followedId", (req, res) => {
-    if (!loggedIn(req.session.user_id)) {
+    if (!h.loggedIn(req.session.user_id)) {
       res.redirect("/");
     }
     
@@ -417,7 +434,7 @@ module.exports = function(app, db) {
   })
   
   app.post("/unfollow/:followedId", (req, res) => {
-    if (!loggedIn(req.session.user_id)) {
+    if (!h.loggedIn(req.session.user_id)) {
       res.redirect("/");
     }
     
@@ -436,7 +453,7 @@ module.exports = function(app, db) {
   })
   
   app.post("/feed", (req, res) => {
-    if (!loggedIn(req.session.user_id)) {
+    if (!h.loggedIn(req.session.user_id)) {
       res.redirect("/");
     }
     
@@ -637,7 +654,7 @@ module.exports = function(app, db) {
           if (error) {
             reject(error);
           } else {
-            callPromise(deleteCommentsOfParent(db, cluster, postId)).then(function(result2){
+            callPromise(deleteCommentsOfParent(db, "image-app-comments", postId)).then(function(result2){
               resolve(true)
             })
           }
@@ -1058,12 +1075,12 @@ module.exports = function(app, db) {
   
   //call deleteComment as shown beneath
   /* 
-    callPromise(deleteComment(db, "image-app-comments", parentType, commentId)).then(function(result) {
+    callPromise(deleteComment(db, "image-app-comments", parentType, parentId, commentId)).then(function(result) {
       use received data here...
     });
   */
   
-  const deleteComment = (db, cluster, parentType, commentId) => {
+  const deleteComment = (db, cluster, parentType, parentId, commentId) => {
     return new Promise((resolve, reject) => {
       db.collection(cluster)
         .deleteOne({ _id: ObjectId(commentId) }, (error, result) => {
@@ -1071,19 +1088,18 @@ module.exports = function(app, db) {
             reject(error)
           } else {
             db.collection(`image-app-${parentType}s`)
-            .findOneAndUpdate({ _id: ObjectId(result.parentId)},
-                              { $pull: { commentIds: result._id.toString() } },
+            .findOneAndUpdate({ _id: ObjectId(parentId)},
+                              { $pull: { commentIds: ObjectId(commentId) } },
                               { returnOrginal: false},
                               (err2, res2) => {
               if(err2){
                 reject(err2)
               } else {
-                callPromise(deleteCommentsOfParent(db, `image-app-comments`, commentId)).then(function(result3) {
+                callPromise(deleteCommentsOfParent(db, `image-app-comments`, parentId)).then(function(result3) {
                   resolve(res2)
                 });
               }
             })
-            resolve(true)
           }
         })
     })
@@ -1091,7 +1107,7 @@ module.exports = function(app, db) {
   
   //call deleteCommentsOfParent as shown beneath
   /* 
-    callPromise(deleteCommentsOfParent(db, `image-app-${parentType}s`, parentId)).then(function(result) {
+    callPromise(deleteCommentsOfParent(db, `image-app-comments`, parentId)).then(function(result) {
       use received data here...
     });
   */
@@ -1103,7 +1119,7 @@ module.exports = function(app, db) {
           if(error){
             reject(error)
           } else {
-            resolve(result)
+            resolve(true)
           }
       })
     })
@@ -1242,25 +1258,6 @@ module.exports = function(app, db) {
   }
   
 
-  const renderWithData = (
-    res,
-    viewFile,
-    obj
-  ) /*(response, "profile.ejs", { variableName: dataToRender })*/ => {
-    res.render(`${__dirname}/views/${viewFile}`, obj);
-  };
-
-  const loggedIn = id => {
-    if (typeof id === "undefined") {
-      return false;
-    }
-
-    return true;
-  };
-
-  const back = (req, res) => {
-    req.session.currentURL = req.session.currentURL ? req.session.currentURL : "/"
-    res.redirect(req.session.currentURL)
-  };
+  
   /*                                     helper methods depends on app and db added here                                    */
 };

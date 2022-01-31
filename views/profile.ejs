@@ -22,7 +22,7 @@
       </div>
 
       <div id="comments-div-of-post" class="card comments-div" style="height: 100vh; width: 33%; position: absolute; top:-1000px; left: -1000px; z-index: 9999; overflow-y: auto">
-        <img class="card-img-top post-image comments-div" id="post-image-in-comments-div" src="">
+        <img class="card-img-top post-image comments-div" id="post-image-in-comments-div" src="" style="max-height:50%">
         <div class="card-img-overlay comments-div">
           <h5 class="card-title post-title comments-div" id="post-title-in-comments-div"></h5>
         </div>
@@ -161,7 +161,7 @@
           $("#to-top-posts").text("Best");
           $("#to-about").remove();
           $("#to-create-new-post").text("Create Post");
-          
+          $("#creator-profile").css({"height": "7rem", "width":"7rem", "font-size":"12px"});
         }
       })
       
@@ -213,30 +213,11 @@
         }
       })
       
-      
-      var feedDate = new Date();
-      feedDate = new Date(feedDate.setHours(feedDate.getHours()-6));
-      
-      const getFeed = () => {
-        const feedURL = "https://image-sharing-with-mongodb.glitch.me/feed"
+      const generatePost = (user, post) => {
+        const postDate = new Date(post.createdAt)
+        const postDateFormated = postDate.toLocaleDateString("en-EN", {day: "2-digit", month: "short", year:"numeric", hour12: false, hour: "numeric", minute: "numeric", second: "numeric"})
         
-        $.post(feedURL, { dateFilter: feedDate }).done(function(data){
-          console.log(data)
-          data = data.reverse();
-          
-          if(data){
-            data.forEach((d, i) => {
-              const post = d.post;
-              const user = d.creator;
-              const title = post.title;
-              const imageURL = post.imageURL;
-              const context = post.context;
-              const creatorId = post.creatorId;
-              
-              const postDate = new Date(post.createdAt)
-              const postDateFormated = postDate.toLocaleDateString("en-EN", {day: "2-digit", month: "short", year:"numeric", hour12: false, hour: "numeric", minute: "numeric", second: "numeric"})
-              
-              const postDiv = `<div class="card post-card" id="post-card-${post._id}" style="width: 100%; margin:auto;"> 
+        return `<div class="card post-card" id="post-card-${post._id}" style="width: 100%; margin:auto;"> 
                 <img class="card-img-top post-image" id="post-image-${post._id}" src="${post.imageURL}">
                 <div class="card-img-overlay">
                   <h5 class="card-title post-title" id="post-title-${post._id}">${post.title}</h5>
@@ -255,6 +236,24 @@
                   <a id="comment-${post._id}"class="card-link comment comments-count" style="display:inline-block" contentType="post" contentId="${post._id}">${post.commentIds.length > 1 ? post.commentIds.length + " comments" : post.commentIds.length + " comment"}</a>
                 </div>
               </div>`
+      }
+      
+      var feedDate = new Date();
+      feedDate = new Date(feedDate.setHours(feedDate.getHours()-6));
+      
+      const getFeed = () => {
+        const feedURL = "https://image-sharing-with-mongodb.glitch.me/feed"
+        
+        $.post(feedURL, { dateFilter: feedDate }).done(function(data){
+          console.log(data)
+          data = data.reverse();
+          
+          if(data){
+            data.forEach((d, i) => {
+              const post = d.post;
+              const user = d.creator;
+              
+              const postDiv = generatePost(user, post);
 
               $("#feed-posts").prepend(postDiv);
             })
@@ -270,6 +269,25 @@
       }
       
       getFeed()
+      
+      if($("#feed-posts").html()==""){
+        $("#feed-posts").append("<center>No feed found. Loading random 5 posts.</center>");
+        
+        $.get("https://image-sharing-with-mongodb.glitch.me/random-post").done(function(data){
+          if(data){
+            data.forEach((d) => {
+              const user = d.creator;
+              const post = d.post;
+            
+              const postDiv = generatePost(user, post);
+              $("#feed-posts").append(postDiv);
+            });
+          }
+        }).fail(function(xhr, status, error){
+          console.log("fail")
+          console.log("Result: " + status + " " + error + " " + xhr.status + " " + xhr.statusText)
+        })
+      }
         
       var feedInterval = setInterval(getFeed,1000)
       
