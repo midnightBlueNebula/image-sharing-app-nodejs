@@ -29,7 +29,7 @@
           Login
         </h3>
       </header>
-      <form id="login-form" name="form" method="post" action="/login">
+      <form id="login-form" name="form" method="post" action="/login" style="position:relative; top:-10px">
         <label for="email-input">
           Email
           <input
@@ -64,4 +64,24 @@
       </footer>
     </section>
   </body>
+  
+  <script>
+    let title = document.querySelector("#login-title");
+    let form = document.querySelector("#login-form");
+    
+    const checkWin = () => {
+      if(window.innerHeight < 500){
+        title.style.top = "-30px";
+        form.style.top = "-30px";
+      } else {
+        title.style.top = "0px";
+        form.style.top = "0px";
+      }
+    }
+    
+    checkWin();
+    
+    window.addEventListener("resize", checkWin)
+    
+  </script>
 </html>
