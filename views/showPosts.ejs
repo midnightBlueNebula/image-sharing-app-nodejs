@@ -22,7 +22,7 @@
     </div>
 
     <div id="comments-div-of-post" class="card comments-div" style="height: 100vh; width: 33%; position: absolute; top:-1000px; left: -1000px; z-index: 9999; overflow-y: auto">
-      <img class="card-img-top post-image comments-div" id="post-image-in-comments-div" src="">
+      <img class="card-img-top post-image comments-div" id="post-image-in-comments-div" src="" style="max-height:50%">
       <div class="card-img-overlay comments-div">
         <h5 class="card-title post-title comments-div" id="post-title-in-comments-div"></h5>
       </div>
@@ -69,21 +69,23 @@
     var navBar = document.querySelector("#nav-bar");
     var postDiv = document.querySelector("#posts-div");
     postDiv.style.height = window.innerHeight - navBar.getBoundingClientRect().height + "px";
+    //var dateCols = document.querySelectorAll(".date-col");
     
-    const handleWindowSize = (event) => {
+    const handleWindowSize = () => {
       if(window.innerWidth < 500){
+        $("#creator-profile").css({"height": "7rem", "width":"7rem", "font-size":"12px"})
         $("#show-posts-div").css("width", "80%");
-        $("#nav-bar").css("font-size", "12px")
+        $("#nav-bar").css("font-size", "12px");
       } else {
         $("#show-posts-div").css("width", "33%");
-        $("#nav-bar").css("font-size", "17px")
+        $("#nav-bar").css("font-size", "17px");
       }
       
       postDiv.style.height = window.innerHeight - navBar.getBoundingClientRect().height + "px";
     };
     
-    window.addEventListener("load", handleWindowSize)
-    window.addEventListener("resize", handleWindowSize)
+    window.addEventListener("load", handleWindowSize);
+    window.addEventListener("resize", handleWindowSize);
   </script>
 </html>
 

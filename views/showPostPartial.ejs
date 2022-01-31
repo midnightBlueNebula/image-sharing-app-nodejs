@@ -9,12 +9,12 @@
   </div>
   <hr/>
   <div class="row user-name" style="margin:auto;" creatorId="<%= post.creatorId %>">
-    <div class="col-lg user-name-col">
+    <a class="col-lg user-name-col card-link">
       <%= creator.name %>
-    </div>
-    <div class="col-lg date-col" style="width:300px">
+    </a>
+    <a class="col-lg date-col card-link" style="width:300px">
       <%= post.createdAt.toLocaleDateString("en-EN", {day: "2-digit", month: "short", year:"numeric", hour12: false, hour: "numeric", minute: "numeric", second: "numeric"}) %>
-    </div>
+    </a>
   </div>
   <hr />
   <% if(viewerId && viewerId != creator._id.toString() && post.likedUserIds.indexOf(viewerId) == -1) { %>

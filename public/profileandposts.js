@@ -79,8 +79,11 @@ $(document).on("click", ".like-content", function(event){
           const viewerId = data.viewerId
           const rect = event.target.getBoundingClientRect()
           const parentRect = event.target.parentElement.getBoundingClientRect();
+          const creatorProfile = document.querySelector("#creator-profile");
+          const h = creatorProfile.getBoundingClientRect().height;
+          const w = creatorProfile.getBoundingClientRect().width;
           
-          $("#creator-profile").css({"top": `${rect.top - rect.height/2}px`, "left": `${parentRect.left-rect.width}px`})
+          $("#creator-profile").css({"top": `${parentRect.top - h}px`, "left": `${parentRect.left+parentRect.width/2-w/2}px`})
           $("#creator-img").attr("src", data.image)
           $("#creator-about").text(data.about)
           
@@ -287,8 +290,8 @@ $(document).on("click", ".like-content", function(event){
                                     <a class="card-link comments-count"
                                        contentId="${comment._id}"
                                        contentType="comment">${comment.commentIds.length > 1 ? comment.commentIds.length + " comments" : comment.commentIds.length + " comment"}</a>
-                                    <br />
                                     <a class="card-link comment-date in-comments-div">${commentDate}</a>
+                                    ${comment.userId==viewerId ? "<br/ ><a href='/delete-comment/"+ comment.parentType + "/" + comment.parentId + "/" + comment._id +"' class='card-link comment-remove in-comments-div'>remove</a>" :"" }
                                   </div>
                                 
                                 </div>`
@@ -333,4 +336,12 @@ $(document).on("click", ".like-content", function(event){
       }
     })
     
-    document.addEventListener("scroll", function(event){}, { passive: true })
+    $("#posts-div").on("scroll", function(event){
+      if(event.target.scrollTop != 0){
+        $(".nav-link").css("color", "white");
+        $("#nav-bar").css("background-color", "#007bff");
+      } else {
+        $(".nav-link").css("color", "#007bff");
+        $("#nav-bar").css("background-color", "white");
+      }
+    })

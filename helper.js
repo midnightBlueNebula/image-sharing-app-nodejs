@@ -16,5 +16,26 @@ module.exports = {
             .replace(/script>/gi, "")    
             .replace(/\/script/gi, "")
     }
+  },
+  
+  renderWithData: function(
+    res,
+    viewFile,
+    obj
+  ) /*(response, "profile.ejs", { variableName: dataToRender })*/ {
+    res.render(`${__dirname}/views/${viewFile}`, obj);
+  },
+
+  loggedIn: function(id) {
+    if (typeof id === "undefined") {
+      return false;
+    }
+
+    return true;
+  },
+
+  back: function(req, res) {
+    req.session.currentURL = req.session.currentURL ? req.session.currentURL : "/"
+    res.redirect(req.session.currentURL)
   }
 };
