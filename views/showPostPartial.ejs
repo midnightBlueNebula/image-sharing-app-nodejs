@@ -26,7 +26,7 @@
     <div class="card-body users-like-comment-remove-post-div" style="margin: auto">
       <a id="user-post-likes-<%= post._id %>" class="card-link likes-count"><%= post.likedUserIds.length %> <%= post.likedUserIds.length > 1 ? "likes" : "like" %></a>
       <a id="user-post-comments-<%= post._id %>" class="card-link comments-count" contentType="post" contentId="<%= post._id %>"><%= post.commentIds.length %> <%= post.commentIds.length > 1 ? "comments" : "comment" %></a>
-      <a href="/delete-post/<%= post._id %>" class="card-link">Remove Post</a>
+      <a class="card-link remove-post" postId="<%= post._id %>">Remove Post</a>
     </div>  
   <% } else if(viewerId && post.likedUserIds.indexOf(viewerId) != -1) { %>
     <div class="card-body like-and-comment-div" style="margin:auto; padding-bottom:1px">

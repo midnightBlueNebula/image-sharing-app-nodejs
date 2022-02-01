@@ -228,16 +228,22 @@ module.exports = function(app, db) {
     callPromise(isAdmin(db, "image-app-users", req.session.user_id)).then(function(admin) {
       if(admin) {
         callPromise(deletePost(db, "image-app-posts", req.params.id)).then(function(post) {
-            h.back(req, res)  
-        })
+            res.send(true); 
+        }).catch(function(error){
+            console.log(error.message);
+            res.send(false)
+          })
       } else {
         callPromise(isCreator(db, "image-app-posts", req.params.id, req.session.user_id)).then(function(creator) {
           if(creator) {
             callPromise(deletePost(db, "image-app-posts", req.params.id)).then(function(post) {
-              h.back(req, res)
-            })
+              res.send(true);
+            }).catch(function(error){
+                console.log(error.message);
+                res.send(false)
+              })
           } else {
-            res.redirect("/")
+            res.send(false);
           }
         })
       }
@@ -374,19 +380,22 @@ module.exports = function(app, db) {
     callPromise(isAdmin(db, "image-app-users", userId)).then(function(admin) {
       if(admin){
         callPromise(deleteComment(db, "image-app-comments", parentType, parentId, commentId)).then(function(result) {
-          //res.json(result)
-          h.back(req, res);
+          res.json(true);
+        }).catch(function(error){
+          console.log(error.message);
+          res.json(false);
         });
       } else {
         callPromise(isCommentor(db, "image-app-comments", commentId, userId)).then(function(commentor) {
           if(commentor){
             callPromise(deleteComment(db, "image-app-comments", parentType, parentId, commentId)).then(function(result) {
-              //res.json(result)
-              h.back(req,res);
+              res.json(true);
+            }).catch(function(error){
+              console.log(error.message);
+              res.json(false);
             });
           } else {
-            res.redirect("/")
-            h.back(req,res);
+            res.json(false);
           }
         })
       }
@@ -1095,7 +1104,7 @@ module.exports = function(app, db) {
               if(err2){
                 reject(err2)
               } else {
-                callPromise(deleteCommentsOfParent(db, `image-app-comments`, parentId)).then(function(result3) {
+                callPromise(deleteCommentsOfParent(db, `image-app-comments`, commentId)).then(function(result3) {
                   resolve(res2)
                 });
               }
