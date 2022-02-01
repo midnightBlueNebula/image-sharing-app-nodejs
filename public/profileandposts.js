@@ -274,7 +274,7 @@ $(document).on("click", ".like-content", function(event){
                                 year:"numeric", hour12: false, hour: "numeric", 
                                 minute: "numeric", second: "numeric"})
                                 
-            const commentDiv = `<div class="comment-div in-comments-div">
+            const commentDiv = `<div id="comment-${comment._id}" class="comment-div in-comments-div">
                                   
                                   <div class="user-name user-name-in-comments-div in-comments-div" creatorId="${user._id.toString()}">
                                     <img src="${user.profileImageURL}" 
@@ -291,7 +291,7 @@ $(document).on("click", ".like-content", function(event){
                                        contentId="${comment._id}"
                                        contentType="comment">${comment.commentIds.length > 1 ? comment.commentIds.length + " comments" : comment.commentIds.length + " comment"}</a>
                                     <a class="card-link comment-date in-comments-div">${commentDate}</a>
-                                    ${comment.userId==viewerId ? "<br/ ><a href='/delete-comment/"+ comment.parentType + "/" + comment.parentId + "/" + comment._id +"' class='card-link comment-remove in-comments-div'>remove</a>" :"" }
+                                    ${comment.userId==viewerId ? `<br/ ><a parentType="${comment.parentType}" parentId="${comment.parentId}" commentId="${comment._id}" class="card-link remove-comment in-comments-div">remove</a>` : "" }
                                   </div>
                                 
                                 </div>`
@@ -345,3 +345,40 @@ $(document).on("click", ".like-content", function(event){
         $("#nav-bar").css("background-color", "white");
       }
     })
+
+
+$(document).on("click", ".remove-post", function(event){
+  const postId = $(this).attr("postId");
+  const url = `https://image-sharing-with-mongodb.glitch.me/delete-post/${postId}`;
+  
+  $.get(url).done(function(data){
+    if(data){
+      $(`#post-card-${postId}`).remove();
+    } else {
+      alert("failed to delete post.")
+    }
+  }).fail(function(xhr, status, error){
+    console.log("fail");
+    console.log("Result: " + status + " " + error + " " + xhr.status + " " + xhr.statusText);
+  })
+})
+
+
+$(document).on("click", ".remove-comment", function(event){
+  const parentType = $(this).attr("parentType");
+  const parentId = $(this).attr("parentId");
+  const commentId = $(this).attr("commentId");
+  
+  const url = `/delete-comment/${parentType}/${parentId}/${commentId}`;
+  
+  $.get(url).done(function(data){
+    if(data){
+      $(`#comment-${commentId}`).remove();
+    } else {
+      alert("failed to delete comment.");
+    }
+  }).fail(function(xhr, status, error){
+    console.log("fail");
+    console.log("Result: " + status + " " + error + " " + xhr.status + " " + xhr.statusText);
+  })
+})

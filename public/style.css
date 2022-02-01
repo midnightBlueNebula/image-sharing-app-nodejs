@@ -188,6 +188,11 @@ textarea{
   text-decoration: none;
 }
 
+.remove-post, .remove-comment{
+  cursor: pointer;
+}
+
+
 @media screen and (max-height: 500px){
   label{
     font-size: 12px;
