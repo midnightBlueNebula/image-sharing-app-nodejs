@@ -494,7 +494,6 @@ module.exports = function(app, db) {
     })
   })
   
-  
 
   /*                                     helper methods depends on app and db added here                                    */
 
@@ -1123,14 +1122,7 @@ module.exports = function(app, db) {
   
   const deleteCommentsOfParent = (db, collection, parentId) => {
     return new Promise((resolve, reject) => {
-      db.collection(collection)
-        .deleteMany({ parentId: parentId}, (error, result) => {
-          if(error){
-            reject(error)
-          } else {
-            resolve(true)
-          }
-      })
+      getAllSubCommentsAndDelete(resolve, reject, db, parentId)
     })
   }
   
@@ -1229,17 +1221,72 @@ module.exports = function(app, db) {
     return new Promise((resolve, reject) => {
       db.collection(cluster)
         .find({ parentId: parentId })
-        .sort({ createdAt: -1 })
+        .sort({ createdAt: 1 })
         .toArray((error, result) => {
           if(error) {
             reject(error)
           } else if(result) {
-            resolve(result)
+            resolve(result);
           } else {
             resolve(false)
           }
         })
     })
+  }
+  
+  const getCommentsOfParentForDel = (db, cluster, parentId) => {
+    return new Promise((resolve, reject) => {
+      db.collection(cluster)
+        .find({ parentId: parentId })
+        .toArray((error, result) => {
+          if(error) {
+            reject(error)
+          } else if(result) {
+            result = result.map((r) => r._id.toString());
+            resolve(result);
+          } else {
+            resolve(false)
+          }
+        })
+    })
+  }
+  
+  const getAllSubCommentsAndDelete = (resolve, reject, db, parentId, index=0, data=[parentId]) => {
+    if(data[index]){
+      callPromise(getCommentsOfParentForDel(db, `image-app-comments`, data[index])).then(function(result) {
+        if(result){
+          data = data.concat(result);
+        };
+        getAllSubCommentsAndDelete(resolve, reject, db, parentId, ++index, data);
+      });
+    } else {
+      db.collection("image-app-comments").deleteMany({ parentId: { $in: data } }, (error, result) => {
+        if(error){
+          reject(error)
+        } else {
+          resolve(true);
+        }
+      })
+    }
+  }
+  
+  const getAllSubCommentsJSON = (res, db, parentId, index=0, data=[parentId]) => {
+    if(data[index]){
+      callPromise(getCommentsOfParentForDel(db, `image-app-comments`, data[index])).then(function(result) {
+        if(result){
+          data = data.concat(result);
+        };
+        getAllSubCommentsJSON(res, db, parentId, ++index, data);
+      });
+    } else {
+      db.collection("image-app-comments").find({ parentId: { $in: data } }).toArray((error, result) => {
+        if(error){
+          res.send(error)
+        } else {
+          res.json(result);
+        }
+      })
+    }
   }
   
   //call getCommentsOfUser as shown beneath
