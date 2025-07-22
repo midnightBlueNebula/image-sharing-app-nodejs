@@ -2,10 +2,7 @@ const session = require("express-session");
 const bcrypt = require("bcrypt");
 const ObjectId = require("mongodb").ObjectId;
 const h = require("./helper.js");
-const fs = require('fs');
-const path = require('path');
 const saltRounds = 12;
-const hello = require("./controllers/usersController.js");
 
 module.exports = function(app, db) {
   app.use(

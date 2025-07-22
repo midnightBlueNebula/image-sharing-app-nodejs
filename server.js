@@ -3,9 +3,9 @@
  * Check out the two endpoints this back-end API provides in fastify.get and fastify.post below
  */
 
+require("dotenv").config(); // loads environment variables from .env file.
 const path = require("path");
 const bodyParser = require("body-parser");
-const mongodb = require("mongodb");
 const MongoClient = require("mongodb").MongoClient;
 const routes = require("./routes.js");
 const express = require("express");
@@ -54,8 +54,8 @@ MongoClient.connect(
     });
 
     // Run the server and report out to the logs
-    app.listen(process.env.PORT || 3000, function() {
-      console.log("Listening on port " + process.env.PORT);
+    app.listen(process.env.PORT, function() {
+      console.log("Server is running on http://127.0.0.1:" + process.env.PORT);
     });
   }
 );
