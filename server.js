@@ -32,8 +32,11 @@ const CONNECTION_STRING = process.env.DB;
 
 MongoClient.connect(
   CONNECTION_STRING,
-  { useNewUrlParser: true },
-  { useUnifiedTopology: true },
+
+  { useNewUrlParser: true, 
+  useUnifiedTopology: true,
+  poolsize: 10 /* pools (caches) 10 connections to run 10 queries in parallel.*/ }, 
+
   function(err, client) {
     if (err) {
       console.log("Connection attempt to mongodb failed");
