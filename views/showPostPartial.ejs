@@ -12,8 +12,8 @@
     <a class="col-lg user-name-col card-link">
       <%= creator.name %>
     </a>
-    <a class="col-lg date-col card-link" style="width:300px">
-      <%= post.createdAt.toLocaleDateString("en-EN", {day: "2-digit", month: "short", year:"numeric", hour12: false, hour: "numeric", minute: "numeric", second: "numeric"}) %>
+    <a class="col-lg date-col card-link" style="width:300px" title="<%= post.createdAt.toLocaleDateString("en-EN", {day: "2-digit", month: "short", year:"numeric", hour12: false, hour: "numeric", minute: "numeric", second: "numeric"}) %>">
+      <%= post.createdAt.toLocaleDateString("en-EN", {day: "2-digit", month: "short", year:"numeric", hour12: false, hour: "numeric", minute: "numeric"}) %>
     </a>
   </div>
   <hr />

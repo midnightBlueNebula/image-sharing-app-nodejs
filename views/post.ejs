@@ -29,7 +29,7 @@
           />
         </label>
         <br />
-        <p style="opacity:0.5" id="image-preview-title">Image Preview - <span id="no-image-note" style="font-style:italic">No image selected yet.</span></p>
+        <p style="opacity:0.5" id="image-preview-title">Image Preview<span id="no-image-note" style="font-style:italic">No image selected yet.</span></p>
         <section id="image-preview">
           <img id="img-preview" src="https://cdn.eso.org/images/thumb300y/eso1907a.jpg"/>
         </section>
@@ -67,27 +67,20 @@
     
     <script>
 
-      $("#image-input").on("input", function(event){
-        let regex = /(\.jpg$)|(\.jpeg$)|(\.png$)/
-        if(regex.test(event.target.value)) {
+          $("#image-input").on("input", function(event){
           $("#post-image-url-button").prop("disabled", true)
-          $("#img-preview").attr("src", event.target.value);
-          $("#no-image-note").text("image url is valid")
+          $("#img-preview").attr("src", event.target.value);  
           let status = true
           $("#img-preview").on("error", function(img){
             status = false
-            $("#no-image-note").text("image url is invalid")
+            $("#no-image-note").text(" - image url is invalid")
             event.target.value = ""
             $("#img-preview").attr("src", "https://cdn.eso.org/images/thumb300y/eso1907a.jpg");
           })
           if(status){
             $("#post-image-url-button").prop("disabled", false)
+            $("#no-image-note").text("")
           }
-        } else {
-          event.target.value = ""
-          $("#no-image-note").text("invalid url. make sure url ends with .jpg, .jpeg or .png")
-          $("#img-preview").attr("src", "https://cdn.eso.org/images/thumb300y/eso1907a.jpg");
-        }
       })
 
     </script>

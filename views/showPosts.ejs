@@ -14,14 +14,14 @@
   </head>
 
   <body>
-    <div id="creator-profile" class="card user-card user-name expand-profile" style="height: 10rem; width: 15rem; position: absolute; top:-1000px; left: -1000px; z-index: 10000; display:flex; flex-wrap:wrap; flex-direction:row">
+    <div id="creator-profile" class="card user-card user-name expand-profile" style="height: 10rem; width: 15rem; position: absolute; top:-1000px; left: -1000px; z-index: 100000; display:flex; flex-wrap:wrap; flex-direction:row">
       <img id="creator-img" class="card-img-top expand-profile" src="" style="height: 50%; width: 50%">
       <p class="card-title expand-profile" id="creator-about" style="width: 50%; height: 50%; text-align:center; margin:auto"></p>
       <p id="follow-button" class="card-link change-follow-status expand-profile" style="margin: auto"></p>
       <p id="follower-count" class="expand-profile" style="margin: auto"></p>
     </div>
 
-    <div id="comments-div-of-post" class="card comments-div" style="height: 100vh; width: 33%; position: absolute; top:-1000px; left: -1000px; z-index: 99999; overflow-y: auto">
+    <div id="comments-div-of-post" class="card comments-div comments-div-container" style="position: absolute; top:-1000px; left: -1000px;">
       <img class="card-img-top post-image comments-div" id="post-image-in-comments-div" src="" style="max-height:50%">
       <div class="card-img-overlay comments-div">
         <h5 class="card-title post-title comments-div" id="post-title-in-comments-div"></h5>
@@ -34,7 +34,7 @@
       </div>
         <% if(viewerId) { %>
           <form id="comment-form" style="position:relative; z-index:10000" class="in-comments-div">
-            <textarea class="in-comments-div" id="comment-input" style="width: 100%">
+            <textarea class="in-comments-div" id="comment-input" style="width: 100%" maxlength="50">
             </textarea>
             <br />
             <input type="submit" id="send-comment" value="send" class="btn btn-primary in-comments-div" style="width:100%"/>

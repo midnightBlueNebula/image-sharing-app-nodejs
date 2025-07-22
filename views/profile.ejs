@@ -57,11 +57,15 @@
       <div id="profile-div" class="card-group">
         <div class="card"  id="liked-posts">
           <h5 id="liked-posts-title" class="btn card-title mt-auto sticky-top" style="width:100%">Liked Posts</h5>
+            <% if(data.length == 0) {%>
+              <p style="height: 100%; text-align:center">No posts have been liked yet :(</p>
+            <% } %>
             <% for(var i=0; i<data.length; ++i) { %>
               <div class="liked-posts-div">
                 <%- include('showPostPartial', { creator: data[i].creator, post: data[i].post, viewerId: viewerId }); %>
               </div>
             <% } %>
+            <p style="height: 100%; text-align:center"> </p>
         </div>
       <div class="card"  id="profile-card">
         <div id="view-profile">         
@@ -123,6 +127,7 @@
             <% for(var i=0; i<posts.length; ++i) { %>
               <%- include('showPostPartial', { creator: user, post: posts[i], viewerId: viewerId }); %>
             <% } %>
+            <p style="height: 100%; text-align:center"> </p>
           </div>
         </div>
       </div>
@@ -179,11 +184,9 @@
       })
 
       $("#image-input").on("input", function(event){
-        let regex = /(\.jpg$)|(\.jpeg$)|(\.png$)/
-        if(regex.test(event.target.value)) {
-          $("#post-image-url-button").prop("disabled", true)
+        $("#post-image-url-button").prop("disabled", true)
           $("#profile-img-preview").attr("src", event.target.value);
-          $("#no-image-note").text("image url is valid")
+          $("#no-image-note").text("")
           let status = true
           $("#profile-img-preview").on("error", function(img){
             status = false
@@ -194,11 +197,6 @@
           if(status){
             $("#post-image-url-button").prop("disabled", false)
           }
-        } else {
-          event.target.value = ""
-          $("#no-image-note").text("invalid url. make sure url ends with .jpg, .jpeg or .png")
-          $("#profile-img-preview").attr("src", "https://cdn.eso.org/images/thumb300y/eso1907a.jpg");
-        }
       })
       
       $("#view-posts").on("click", function() {
@@ -241,6 +239,8 @@
       var feedDate = new Date();
       feedDate = new Date(feedDate.setHours(feedDate.getHours()-6));
       
+      var feedPostIds = [];
+      
       const getFeed = () => {
         const feedURL = "https://image-sharing-with-mongodb.glitch.me/feed"
         
@@ -253,9 +253,11 @@
               const post = d.post;
               const user = d.creator;
               
-              const postDiv = generatePost(user, post);
-
-              $("#feed-posts").prepend(postDiv);
+              if(feedPostIds.indexOf(post._id) == -1){
+                const postDiv = generatePost(user, post);
+                $("#feed-posts").prepend(postDiv);
+                feedPostIds.push(d.post._id);
+              }
             })
             
             
@@ -271,16 +273,17 @@
       getFeed()
       
       if($("#feed-posts").html()==""){
-        $("#feed-posts").append("<center>No feed found. Loading random 5 posts.</center>");
-        
         $.get("https://image-sharing-with-mongodb.glitch.me/random-post").done(function(data){
           if(data){
             data.forEach((d) => {
               const user = d.creator;
               const post = d.post;
             
-              const postDiv = generatePost(user, post);
-              $("#feed-posts").append(postDiv);
+              if(feedPostIds.indexOf(post._id) == -1){
+                const postDiv = generatePost(user, post);
+                $("#feed-posts").append(postDiv);
+                feedPostIds.push(d.post._id);
+              }
             });
           }
         }).fail(function(xhr, status, error){

@@ -131,7 +131,7 @@ module.exports = function(app, db) {
                                       { user: user, 
                                         posts: posts, 
                                         viewerId: req.session.user_id }, 
-                                      likedPosts, 0, [])
+                                      likedPosts, 1)
         });
       });
     });
@@ -249,7 +249,8 @@ module.exports = function(app, db) {
   
   
   app.get("/random-post", (req, res) => {
-    db.collection("image-app-posts").aggregate([{ $sample: { size: 5 } }]).toArray((error, result)=>{
+    db.collection("image-app-posts").aggregate([{ $match: { creatorId: { $ne: req.session.user_id }}}, 
+                                                { $sample: { size: 2 } }]).toArray((error, result)=>{
       if(result){
         getCreatorPerPostThenSendJSON(res, result, 0, []);
       } else {
@@ -315,9 +316,8 @@ module.exports = function(app, db) {
   
     callPromise(getPostsByDate(db, "image-app-posts", date)).then(function(posts) {
       if(posts){
-        var data = []
         getCreatorPerPostThenRender(h.renderWithData, res, "showPosts.ejs", 
-                                    { viewerId: req.session.user_id }, posts, 0, data)
+                                    { viewerId: req.session.user_id }, posts, 2)
       } else {
         res.send("/no data available")
       }
@@ -330,9 +330,8 @@ module.exports = function(app, db) {
     
     callPromise(getTopLikedPosts(db, "image-app-posts", date)).then(function(posts) {
       if(posts){
-        var data = []
         getCreatorPerPostThenRender(h.renderWithData, res, "showPosts.ejs", 
-                                    { viewerId: req.session.user_id }, posts, 0, data)
+                                    { viewerId: req.session.user_id }, posts, 1)
       } else {
         res.send("/no data available")
       }
@@ -344,7 +343,7 @@ module.exports = function(app, db) {
       res.redirect("/");
     }
     
-    const content = h.cleanseString(req.body.content)
+    const content = h.cleanseString(req.body.content.trim())
     const parentType = req.params.parentType
     const parentId = req.params.parentId
     const userId = req.session.user_id
@@ -492,7 +491,7 @@ module.exports = function(app, db) {
   })
   
 
-  /*                                     helper methods depends on app and db added here                                    */
+  /*                                     Controller functions written below.                                    */
 
   //call async data request from database example: callPromise(getUserById(args)).then(function(data){ use data here })
   const callPromise = async promise => {
@@ -850,19 +849,38 @@ module.exports = function(app, db) {
   
   //call getCreatorPerPostThenRender as shown beneath
   /* 
-    getCreatorPerPostThenRender(renderWithData, res, "page.ejs", { renderWithData: argsToPage }, posts, index, data)
+    getCreatorPerPostThenRender(renderWithData, res, "page.ejs", { renderWithData: argsToPage }, posts, sortBy)
+    sortBy -> 0: no sorting, 1: sort by likes, 2: sort by date.
   */
   
-  const getCreatorPerPostThenRender = (renderCall, response, renderView, renderOpts, posts, index, data) => {
-    if(posts[index]){
-      callPromise(getUserById(db, "image-app-users", posts[index].creatorId)).then(function(creator){
-        data.push({ post: posts[index], creator: creator })
-        getCreatorPerPostThenRender(renderCall, response, renderView, renderOpts, posts, ++index, data)
-      })
-    } else {
-      renderOpts.data = data
-      renderCall(response, renderView, renderOpts)
-    }
+  
+  const getCreatorPerPostThenRender = (renderCall, response, renderView, renderOpts, posts, sortBy=0) => {
+    const creatorIdPostMap = {};
+    const creatorIds = posts.map(post => {
+      const creatorId = post.creatorId
+      if(creatorIdPostMap[creatorId] == undefined){
+        creatorIdPostMap[creatorId] = [];
+        creatorIdPostMap[creatorId].push(post);
+        return ObjectId(creatorId);
+      } else {
+        creatorIdPostMap[creatorId].push(post);
+      }
+    });
+    callPromise(getUserByIds(db, "image-app-users", creatorIds)).then(function(creators){
+        let data = [];
+        creators.forEach(creator => {
+          creatorIdPostMap[creator._id + ""].forEach(post => {
+            data.push({ post: post, creator: creator })
+          })
+        })
+        if(sortBy==1){
+          data = data.sort((a, b) => b.post.likedUserIds.length - a.post.likedUserIds.length);
+        } else if(sortBy==2){
+          data = data.sort((a, b) => b.post.createdAt.length - a.post.createdAt.length);
+        }
+        renderOpts.data = data
+        renderCall(response, renderView, renderOpts)
+    })
   }
   
   //call getCreatorPerPostThenSendJSON as shown beneath
