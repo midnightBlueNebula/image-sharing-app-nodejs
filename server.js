@@ -3,18 +3,24 @@
  * Check out the two endpoints this back-end API provides in fastify.get and fastify.post below
  */
 
-require("dotenv").config(); // loads environment variables from .env file.
-const path = require("path");
-const bodyParser = require("body-parser");
-const MongoClient = require("mongodb").MongoClient;
-const routes = require("./routes.js");
-const express = require("express");
+import "dotenv/config"; // This automatically loads environment variables from .env file.
+import path from "path";
+import bodyParser from "body-parser";
+import pkg from "mongodb";
+const { MongoClient } = pkg;
+import express from "express";
+import ejs from "ejs";
+import routes from "./routes.js";
+import { fileURLToPath } from "url";
+
 const app = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(express.static("public"));
-app.engine("html", require("ejs").renderFile);
+app.engine("html", ejs.renderFile);
 app.use(
   "/css",
   express.static(path.join(__dirname, "node_modules/bootstrap/dist/css"))
@@ -33,11 +39,13 @@ const CONNECTION_STRING = process.env.DB;
 MongoClient.connect(
   CONNECTION_STRING,
 
-  { useNewUrlParser: true, 
-  useUnifiedTopology: true,
-  poolsize: 10 /* pools (caches) 10 connections to run 10 queries in parallel.*/ }, 
+  {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    poolsize: 10 /* pools (caches) 10 connections to run 10 queries in parallel.*/,
+  },
 
-  function(err, client) {
+  function (err, client) {
     if (err) {
       console.log("Connection attempt to mongodb failed");
     } else {
@@ -49,15 +57,12 @@ MongoClient.connect(
     routes(app, db);
 
     //404 Not Found Middleware
-    app.use(function(req, res, next) {
-      res
-        .status(404)
-        .type("text")
-        .send("Not Found");
+    app.use(function (req, res, next) {
+      res.status(404).type("text").send("Not Found");
     });
 
     // Run the server and report out to the logs
-    app.listen(process.env.PORT, function() {
+    app.listen(process.env.PORT, function () {
       console.log("Server is running on http://127.0.0.1:" + process.env.PORT);
     });
   }

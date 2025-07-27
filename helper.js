@@ -1,24 +1,32 @@
-module.exports = {
+import path from "path";
+import { fileURLToPath } from "url";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const h = {
   // helper function that prevents html/css/script malice
-  cleanseString: function(string) {
+  cleanseString: function (string) {
     return string.replace(/</g, "&lt;").replace(/>/g, "&gt;");
   },
-  
-  removeScriptTags: function(str) {
-    while(str.match(/<script>/i)   || 
-          str.match(/<\/script>/i) || 
-          str.match(/<script/i)    || 
-          str.match(/script>/i)    ||
-          str.match(/\/script/i)) {
-      str = str.replace(/<script>/gi, "")   
-            .replace(/<\/script>/gi, "") 
-            .replace(/<script/gi, "")    
-            .replace(/script>/gi, "")    
-            .replace(/\/script/gi, "")
+
+  removeScriptTags: function (str) {
+    while (
+      str.match(/<script>/i) ||
+      str.match(/<\/script>/i) ||
+      str.match(/<script/i) ||
+      str.match(/script>/i) ||
+      str.match(/\/script/i)
+    ) {
+      str = str
+        .replace(/<script>/gi, "")
+        .replace(/<\/script>/gi, "")
+        .replace(/<script/gi, "")
+        .replace(/script>/gi, "")
+        .replace(/\/script/gi, "");
     }
   },
-  
-  renderWithData: function(
+
+  renderWithData: function (
     res,
     viewFile,
     obj
@@ -26,7 +34,7 @@ module.exports = {
     res.render(`${__dirname}/views/${viewFile}`, obj);
   },
 
-  loggedIn: function(id) {
+  loggedIn: function (id) {
     if (typeof id === "undefined") {
       return false;
     }
@@ -34,8 +42,12 @@ module.exports = {
     return true;
   },
 
-  back: function(req, res) {
-    req.session.currentURL = req.session.currentURL ? req.session.currentURL : "/"
-    res.redirect(req.session.currentURL)
-  }
+  back: function (req, res) {
+    req.session.currentURL = req.session.currentURL
+      ? req.session.currentURL
+      : "/";
+    res.redirect(req.session.currentURL);
+  },
 };
+
+export default h;
