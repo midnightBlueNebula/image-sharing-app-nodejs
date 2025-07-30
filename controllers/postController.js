@@ -11,9 +11,7 @@ export default function (app, db) {
 
     const id = req.session.user_id;
 
-    callPromise(User.getUserById(db, "image-app-users", id)).then(function (
-      result
-    ) {
+    callPromise(User.getUserById(db, id)).then(function (result) {
       h.renderWithData(res, "post.ejs", {
         user: result,
         viewerId: result._id.toString(),
@@ -31,12 +29,12 @@ export default function (app, db) {
     const imageURL = h.cleanseString(req.body.imageURL);
     const context = h.cleanseString(req.body.context);
 
-    callPromise(
-      Post.createPost(db, "image-app-posts", userId, title, imageURL, context)
-    ).then(function (result) {
-      const path = "/show-post/" + result._id;
-      res.redirect(path);
-    });
+    callPromise(Post.createPost(db, userId, title, imageURL, context)).then(
+      function (result) {
+        const path = "/show-post/" + result._id;
+        res.redirect(path);
+      }
+    );
   });
 
   app.get("/delete-post/:id", (req, res) => {
@@ -48,42 +46,35 @@ export default function (app, db) {
       req.session.currentURL = "/new-posts";
     }
 
-    callPromise(User.isAdmin(db, "image-app-users", req.session.user_id)).then(
-      function (admin) {
-        if (admin) {
-          callPromise(Post.deletePost(db, "image-app-posts", req.params.id))
-            .then(function (post) {
-              res.send(true);
-            })
-            .catch(function (error) {
-              console.log(error.message);
-              res.send(false);
-            });
-        } else {
-          callPromise(
-            User.isCreator(
-              db,
-              "image-app-posts",
-              req.params.id,
-              req.session.user_id
-            )
-          ).then(function (creator) {
-            if (creator) {
-              callPromise(Post.deletePost(db, "image-app-posts", req.params.id))
-                .then(function (post) {
-                  res.send(true);
-                })
-                .catch(function (error) {
-                  console.log(error.message);
-                  res.send(false);
-                });
-            } else {
-              res.send(false);
-            }
+    callPromise(User.isAdmin(db, req.session.user_id)).then(function (admin) {
+      if (admin) {
+        callPromise(Post.deletePost(db, req.params.id))
+          .then(function (post) {
+            res.send(true);
+          })
+          .catch(function (error) {
+            console.log(error.message);
+            res.send(false);
           });
-        }
+      } else {
+        callPromise(
+          Post.isCreator(db, req.params.id, req.session.user_id)
+        ).then(function (creator) {
+          if (creator) {
+            callPromise(Post.deletePost(db, req.params.id))
+              .then(function (post) {
+                res.send(true);
+              })
+              .catch(function (error) {
+                console.log(error.message);
+                res.send(false);
+              });
+          } else {
+            res.send(false);
+          }
+        });
       }
-    );
+    });
   });
 
   app.get("/random-post", (req, res) => {
@@ -105,19 +96,17 @@ export default function (app, db) {
     const postId = req.params.id;
     req.session.currentURL = `/show-post/${postId}`;
 
-    callPromise(Post.getPostById(db, "image-app-posts", postId)).then(function (
-      post
-    ) {
+    callPromise(Post.getPostById(db, postId)).then(function (post) {
       if (post) {
-        callPromise(Post.getUserById(db, "image-app-users", post.creatorId)).then(
-          function (creator) {
-            let data = [{ post: post, creator: creator }];
-            h.renderWithData(res, "showPosts.ejs", {
-              data: data,
-              viewerId: req.session.user_id,
-            });
-          }
-        );
+        callPromise(User.getUserById(db, post.creatorId)).then(function (
+          creator
+        ) {
+          let data = [{ post: post, creator: creator }];
+          h.renderWithData(res, "showPosts.ejs", {
+            data: data,
+            viewerId: req.session.user_id,
+          });
+        });
       } else {
         res.send("/no data available");
       }
@@ -127,12 +116,9 @@ export default function (app, db) {
   app.get("/new-posts", (req, res) => {
     let date = new Date();
     date.setHours(date.getHours() - 1);
-    const viewerId = req.session.user_id ? req.session.user_id : null;
     req.session.currentURL = "/new-posts";
 
-    callPromise(Post.getPostsByDate(db, "image-app-posts", date)).then(function (
-      posts
-    ) {
+    callPromise(Post.getPostsByDate(db, date)).then(function (posts) {
       if (posts) {
         User.getCreatorPerPostThenRender(
           h.renderWithData,
@@ -153,9 +139,7 @@ export default function (app, db) {
     const date = req.query.date ? req.query.date : new Date("01 Jan 2021");
     req.session.currentURL = "/top-posts";
 
-    callPromise(Post.getTopLikedPosts(db, "image-app-posts", date)).then(function (
-      posts
-    ) {
+    callPromise(Post.getTopLikedPosts(db, date)).then(function (posts) {
       if (posts) {
         User.getCreatorPerPostThenRender(
           h.renderWithData,
@@ -168,6 +152,25 @@ export default function (app, db) {
         );
       } else {
         res.send("/no data available");
+      }
+    });
+  });
+
+  app.post("/feed", (req, res) => {
+    if (!h.loggedIn(req.session.user_id)) {
+      res.redirect("/");
+    }
+
+    const userId = req.session.user_id;
+    const dateFilter = new Date(req.body.dateFilter);
+
+    callPromise(Post.getUserFeed(db, userId, dateFilter)).then(function (
+      feedPosts
+    ) {
+      if (feedPosts) {
+        User.getCreatorPerPostThenSendJSON(res, feedPosts, 0, [], db);
+      } else {
+        res.send(false);
       }
     });
   });

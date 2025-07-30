@@ -4,7 +4,7 @@ $(document).on("click", ".like-content", function(event){
         const content = $(this).attr("contentType")
         const contentId = $(this).attr("contentId")
         
-        const url = `https://image-sharing-with-mongodb.glitch.me/like/${content}/${contentId}`
+        const url = `/like/${content}/${contentId}`
         
         $.post(url).done(function(data, status){
           if(data){
@@ -33,7 +33,7 @@ $(document).on("click", ".like-content", function(event){
         $(this).toggleClass("liked-content")
         const content = $(this).attr("contentType")
         const contentId = $(this).attr("contentId")
-        const url = `https://image-sharing-with-mongodb.glitch.me/regret-like/${content}/${contentId}`
+        const url = `/regret-like/${content}/${contentId}`
   
         
         $.post(url).done(function(data, status){
@@ -68,8 +68,8 @@ $(document).on("click", ".like-content", function(event){
     $(document).on("mouseover", ".user-name", function(event){
       event.stopPropagation()
       mouseBack = true
-      const url = `https://image-sharing-with-mongodb.glitch.me/getUserJSON/${$(this).attr("creatorId")}`
-      $.get(url).done(function(data, status){
+      const url = `/getUserJSON/${$(this).attr("creatorId")}`
+      $.getJSON(url).done(function(data, status){
         if(data){
           const creatorId = data.creatorId
           const name = data.name
@@ -151,7 +151,7 @@ $(document).on("click", ".like-content", function(event){
       if($(this).attr("class").includes("following") == false){
         $(this).toggleClass("following")
         
-        const url = `https://image-sharing-with-mongodb.glitch.me/follow/${creatorId}`
+        const url = `/follow/${creatorId}`
         
         $.post(url).done(function(data, status){
           if(data){
@@ -183,7 +183,7 @@ $(document).on("click", ".like-content", function(event){
       } else {
         $(this).toggleClass("following")
         
-        const url = `https://image-sharing-with-mongodb.glitch.me/unfollow/${creatorId}`
+        const url = `/unfollow/${creatorId}`
         
         $.post(url).done(function(data, status){
           if(data){
@@ -245,7 +245,7 @@ $(document).on("click", ".like-content", function(event){
         $("#show-comments").append(`<div id="close" class="btn btn-danger" style="position:relative; z-index:10000; width:100%">X</div>`)
       }
       
-      const url = `https://image-sharing-with-mongodb.glitch.me/get-comments/${contentType}/${contentId}`
+      const url = `/get-comments/${contentType}/${contentId}`
       
       $.get(url).done(function(data){
         if(data && data.data){
@@ -312,7 +312,7 @@ $(document).on("click", ".like-content", function(event){
       const contentType = $(this).attr("contentType");
       const contentId = $(this).attr("contentId");
       
-      const url = `https://image-sharing-with-mongodb.glitch.me/comment/${contentType}/${contentId}`;
+      const url = `/comment/${contentType}/${contentId}`;
       $.post(url, { content: comment }).done(function(data){
         if(data){
           $(`.comments-count[contentId=${contentId}]`).click()
@@ -349,7 +349,7 @@ $(document).on("click", ".like-content", function(event){
 
 $(document).on("click", ".remove-post", function(event){
   const postId = $(this).attr("postId");
-  const url = `https://image-sharing-with-mongodb.glitch.me/delete-post/${postId}`;
+  const url = `/delete-post/${postId}`;
   
   $.get(url).done(function(data){
     if(data){

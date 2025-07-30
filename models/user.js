@@ -1,16 +1,17 @@
-import pkg from "mongodb"; const { ObjectId } = pkg;
+import pkg from "mongodb";
+const { ObjectId } = pkg;
 import callPromise from "../callPromise.js";
 
 //call isAdmin as shown beneath
 /* 
-    callPromise(isAdmin(db, "image-app-users", userId)).then(function(result) {
+    callPromise(isAdmin(db, userId)).then(function(result) {
       use received data here...
     });
   */
 
-export function isAdmin(db, cluster, userId) {
+function isAdmin(db, userId) {
   return new Promise((resolve, reject) => {
-    callPromise(getUserById(db, cluster, userId)).then(function (result) {
+    callPromise(getUserById(db, userId)).then(function (result) {
       if (result) {
         resolve(result.admin);
       } else {
@@ -22,14 +23,14 @@ export function isAdmin(db, cluster, userId) {
 
 //call getUserById as shown beneath
 /* 
-    callPromise(getUserById(db, "image-app-users", id)).then(function(result) {
+    callPromise(getUserById(db, id)).then(function(result) {
       use received data here...
     });
   */
 
-export function getUserById(db, cluster, id) {
+function getUserById(db, id) {
   return new Promise((resolve, reject) => {
-    db.collection(cluster).findOne({ _id: ObjectId(id) }, (error, result) => {
+    db.collection("image-app-users").findOne({ _id: ObjectId(id) }, (error, result) => {
       if (error) {
         reject(error);
       } else if (result) {
@@ -43,14 +44,14 @@ export function getUserById(db, cluster, id) {
 
 //call getUserByIds as shown beneath
 /* 
-    callPromise(getUserByIds(db, "image-app-users", ids)).then(function(result) {
+    callPromise(getUserByIds(db, ids)).then(function(result) {
       use received data here...
     });
   */
 
-export function getUserByIds(db, cluster, ids) {
+function getUserByIds(db, ids) {
   return new Promise((resolve, reject) => {
-    db.collection(cluster)
+    db.collection("image-app-users")
       .find({ _id: { $in: ids } })
       .toArray((error, result) => {
         if (error) {
@@ -66,41 +67,18 @@ export function getUserByIds(db, cluster, ids) {
 
 //call getUserByEmail as shown beneath
 /* 
-    callPromise(getUserByEmail(db, "image-app-users", email)).then(function(result) {
+    callPromise(getUserByEmail(db, email)).then(function(result) {
       use received data here...
     });
   */
 
-export function getUserByEmail(db, cluster, email) {
+function getUserByEmail(db, email) {
   return new Promise((resolve, reject) => {
-    db.collection(cluster).findOne({ email: email }, (error, result) => {
+    db.collection("image-app-users").findOne({ email: email }, (error, result) => {
       if (error) {
         reject(error);
       } else if (result) {
         resolve(result);
-      } else {
-        resolve(false);
-      }
-    });
-  });
-}
-
-//call isCreator as shown beneath
-/* 
-    callPromise(isCreator(db, "image-app-posts", postId, userId)).then(function(result) {
-      use received data here...
-    });
-  */
-
-export function isCreator(db, cluster, postId, userId) {
-  return new Promise((resolve, reject) => {
-    callPromise(getPostById(db, cluster, postId)).then(function (result) {
-      if (result) {
-        if (result.creatorId == userId) {
-          resolve(true);
-        } else {
-          resolve(false);
-        }
       } else {
         resolve(false);
       }
@@ -114,7 +92,7 @@ export function isCreator(db, cluster, postId, userId) {
     sortBy -> 0: no sorting, 1: sort by likes, 2: sort by date.
   */
 
-export function getCreatorPerPostThenRender(
+function getCreatorPerPostThenRender(
   renderCall,
   response,
   renderView,
@@ -134,7 +112,7 @@ export function getCreatorPerPostThenRender(
       creatorIdPostMap[creatorId].push(post);
     }
   });
-  callPromise(getUserByIds(db, "image-app-users", creatorIds)).then(function (
+  callPromise(getUserByIds(db, creatorIds)).then(function (
     creators
   ) {
     let data = [];
@@ -162,7 +140,7 @@ export function getCreatorPerPostThenRender(
     getCreatorPerPostThenSendJSON(res, feedPosts, 0, [])
   */
 
-export function getCreatorPerPostThenSendJSON(
+function getCreatorPerPostThenSendJSON(
   res,
   feedPosts,
   index = 0,
@@ -171,7 +149,7 @@ export function getCreatorPerPostThenSendJSON(
 ) {
   if (feedPosts[index]) {
     callPromise(
-      getUserById(db, "image-app-users", feedPosts[index].creatorId)
+      getUserById(db, feedPosts[index].creatorId)
     ).then(function (creator) {
       data.push({ post: feedPosts[index], creator: creator });
       getCreatorPerPostThenSendJSON(res, feedPosts, ++index, data);
@@ -181,16 +159,155 @@ export function getCreatorPerPostThenSendJSON(
   }
 }
 
-// Bundle all functions into one object
+const getUserPerCommentThenSend = (
+  response,
+  viewerId,
+  comments,
+  index,
+  data,
+  db
+) => {
+  if (comments[index]) {
+    callPromise(
+      getUserById(db, comments[index].userId)
+    ).then(function (user) {
+      data.push({ comment: comments[index], user: user });
+      getUserPerCommentThenSend(
+        response,
+        viewerId,
+        comments,
+        ++index,
+        data,
+        db
+      );
+    });
+  } else {
+    response.json({ viewerId: viewerId, data: data });
+  }
+};
+
+//call followUser as shown beneath
+/* 
+    callPromise(followUser(db, followerId, followedId)).then(function(result) {
+      use received data here...
+    });
+  */
+
+const followUser = (db, followerId, followedId) => {
+  if (followerId == followedId) return;
+
+  return new Promise((resolve, reject) => {
+    db.collection("image-app-users").findOneAndUpdate(
+      { _id: ObjectId(followerId), followedIds: { $ne: followedId } },
+      { $push: { followedIds: followedId } },
+      { returnOriginal: false },
+      (error, result) => {
+        if (error) {
+          reject(error);
+        } else if (result) {
+          db.collection(cluster).findOneAndUpdate(
+            { _id: ObjectId(followedId), followerIds: { $ne: followerId } },
+            { $push: { followerIds: followerId } },
+            { returnOriginal: false },
+            (error2, result2) => {
+              if (error2 || !result2) {
+                db.collection(cluster).findOneAndUpdate(
+                  { _id: ObjectId(followerId), followedIds: followedId },
+                  { $pull: { followerIds: followerId } },
+                  (error3, result3) => {
+                    if (error2) {
+                      reject(error2);
+                    } else if (error3) {
+                      reject(error3);
+                    } else {
+                      resolve(false);
+                    }
+                  }
+                );
+              } else {
+                resolve(result2);
+              }
+            }
+          );
+        } else {
+          resolve(false);
+        }
+      }
+    );
+  });
+};
+
+//call unfollowUser as shown beneath
+/* 
+    callPromise(unfollowUser(db, followerId, followedId)).then(function(result) {
+      use received data here...
+    });
+  */
+
+const unfollowUser = (db, followerId, followedId) => {
+  return new Promise((resolve, reject) => {
+    db.collection("image-app-users").findOneAndUpdate(
+      { _id: ObjectId(followerId), followedIds: followedId },
+      { $pull: { followedIds: followedId } },
+      { returnOriginal: false },
+      (error, result) => {
+        if (error) {
+          reject(error);
+        } else {
+          db.collection("image-app-users").findOneAndUpdate(
+            { _id: ObjectId(followedId), followerIds: followerId },
+            { $pull: { followerIds: followerId } },
+            { returnOriginal: false },
+            (error2, result2) => {
+              if (error2) {
+                reject(error2);
+              } else if (result2) {
+                resolve(result2);
+              } else {
+                resolve(false);
+              }
+            }
+          );
+        }
+      }
+    );
+  });
+};
+
+//call getFollowedUsers as shown beneath
+/* 
+    callPromise(getFollowedUsers(db, userId)).then(function(result) {
+      use received data here...
+    });
+  */
+
+const getFollowedUsers = (db, userId) => {
+  return new Promise((resolve, reject) => {
+    db.collection("image-app-users")
+      .find({ followerIds: userId })
+      .toArray((error, result) => {
+        if (error) {
+          reject(error);
+        } else if (result) {
+          resolve(result);
+        } else {
+          resolve(false);
+        }
+      });
+  });
+};
+
 const User = {
   isAdmin,
   getUserById,
   getUserByIds,
   getUserByEmail,
-  isCreator,
   getCreatorPerPostThenRender,
   getCreatorPerPostThenSendJSON,
+  getUserPerCommentThenSend,
+  followUser,
+  unfollowUser,
+  getFollowedUsers,
 };
 
-// Default export the object
 export default User;

@@ -1,19 +1,18 @@
-import pkg from "mongodb"; const { ObjectId } = pkg;
+import pkg from "mongodb";
+const { ObjectId } = pkg;
 import callPromise from "../callPromise.js";
-
-const saltRounds = 12;
 
 //call createPost as shown beneath
 /* 
-    callPromise(createPost(db, "image-app-posts", userId, title, imageURL, context)).then(function(result) {
+    callPromise(createPost(db, userId, title, imageURL, context)).then(function(result) {
       use received data here...
     });
   */
 
-function createPost(db, cluster, userId, title, imageURL, context, tags) {
+function createPost(db, userId, title, imageURL, context, tags) {
   return new Promise((resolve, reject) => {
     const date = new Date();
-    db.collection(cluster).insertOne(
+    db.collection("image-app-posts").insertOne(
       {
         _id: new ObjectId(),
         creatorId: userId,
@@ -39,14 +38,14 @@ function createPost(db, cluster, userId, title, imageURL, context, tags) {
 
 //call getPostById as shown beneath
 /* 
-    callPromise(getPostById(db, "image-app-posts", postId)).then(function(result) {
+    callPromise(getPostById(db, postId)).then(function(result) {
       use received data here...
     });
   */
 
-function getPostById(db, cluster, postId) {
+function getPostById(db, postId) {
   return new Promise((resolve, reject) => {
-    db.collection(cluster).findOne(
+    db.collection("image-app-posts").findOne(
       { _id: ObjectId(postId) },
       (error, result) => {
         if (error) {
@@ -63,14 +62,14 @@ function getPostById(db, cluster, postId) {
 
 //call getPostsByTags as shown beneath
 /* 
-    callPromise(getPostsByTags(db, "image-app-posts", tags)).then(function(result) {
+    callPromise(getPostsByTags(db, tags)).then(function(result) {
       use received data here...
     });
   */
 
-function getPostsByTags(db, cluster, tags) {
+function getPostsByTags(db, tags) {
   return new Promise((resolve, reject) => {
-    db.collection(cluster)
+    db.collection("image-app-posts")
       .find({ tags: tags })
       .sort({ createdAt: -1 })
       .toArray((error, result) => {
@@ -87,14 +86,14 @@ function getPostsByTags(db, cluster, tags) {
 
 //call deletePost as shown beneath
 /* 
-    callPromise(deletePost(db, "image-app-posts", postId)).then(function(result) {
+    callPromise(deletePost(db, postId)).then(function(result) {
       use received data here...
     });
   */
 
-function deletePost(db, cluster, postId) {
+function deletePost(db, postId) {
   return new Promise((resolve, reject) => {
-    db.collection(cluster).deleteOne(
+    db.collection("image-app-posts").deleteOne(
       { _id: ObjectId(postId) },
       (error, result) => {
         if (error) {
@@ -111,16 +110,41 @@ function deletePost(db, cluster, postId) {
   });
 }
 
-//call getLikedPostsByUser as shown beneath
+//call isCreator as shown beneath
 /* 
-    callPromise(getLikedPostsByUser(db, "image-app-posts", userId)).then(function(result) {
+    callPromise(isCreator(db, postId, userId)).then(function(result) {
       use received data here...
     });
   */
 
-const getLikedPostsByUser = (db, cluster, userId) => {
+function isCreator(db, postId, userId) {
   return new Promise((resolve, reject) => {
-    db.collection(cluster)
+    callPromise(getPostById(db, "image-app-posts", postId)).then(function (
+      result
+    ) {
+      if (result) {
+        if (result.creatorId == userId) {
+          resolve(true);
+        } else {
+          resolve(false);
+        }
+      } else {
+        resolve(false);
+      }
+    });
+  });
+}
+
+//call getLikedPostsByUser as shown beneath
+/* 
+    callPromise(getLikedPostsByUser(db, userId)).then(function(result) {
+      use received data here...
+    });
+  */
+
+const getLikedPostsByUser = (db, userId) => {
+  return new Promise((resolve, reject) => {
+    db.collection("image-app-posts")
       .find({ likedUserIds: userId })
       .sort({ createdAt: -1 })
       .toArray((error, result) => {
@@ -137,14 +161,13 @@ const getLikedPostsByUser = (db, cluster, userId) => {
 
 //call getPostsOfUser as shown beneath
 /* 
-    callPromise(getPostsOfUser(db, "image-app-posts", userId, dateFilter, false)).then(function(result) {
+    callPromise(getPostsOfUser(db, userId, dateFilter, false)).then(function(result) {
       use received data here...
     });
   */
 
 const getPostsOfUser = (
   db,
-  cluster,
   userId,
   dateFilter = false,
   multipleUsers = false
@@ -158,7 +181,7 @@ const getPostsOfUser = (
       query.createdAt = { $gte: dateFilter };
     }
 
-    db.collection(cluster)
+    db.collection("image-app-posts")
       .find(query)
       .sort({ createdAt: -1 })
       .toArray((error, resultArray) => {
@@ -180,9 +203,9 @@ const getPostsOfUser = (
     });
   */
 
-const getPostsByDate = (db, cluster, date) => {
+const getPostsByDate = (db, date) => {
   return new Promise((resolve, reject) => {
-    db.collection(cluster)
+    db.collection("image-app-posts")
       .find({ createdAt: { $gte: date } })
       .sort({ createdAt: -1 })
       .toArray((error, result) => {
@@ -199,14 +222,14 @@ const getPostsByDate = (db, cluster, date) => {
 
 //call getTopLikedPosts as shown beneath
 /* 
-    callPromise(getPostsOfUser(db, "image-app-posts", dateFilter)).then(function(result) {
+    callPromise(getPostsOfUser(db, dateFilter)).then(function(result) {
       use received data here...
     });
   */
 
-const getTopLikedPosts = (db, cluster, dateFilter) => {
+const getTopLikedPosts = (db, dateFilter) => {
   return new Promise((resolve, reject) => {
-    db.collection(cluster)
+    db.collection("image-app-posts")
       .find({ createdAt: { $gte: dateFilter } })
       .toArray((error, result) => {
         if (error) {
@@ -223,16 +246,48 @@ const getTopLikedPosts = (db, cluster, dateFilter) => {
   });
 };
 
-// models/post.js
+//call getUserFeed as shown beneath
+/* 
+    callPromise(getUserFeed(db, userId, dateFilter)).then(function(result) {
+      use received data here...
+    });
+  */
+
+const getUserFeed = (db, userId, dateFilter) => {
+  return new Promise((resolve, reject) => {
+    callPromise(User.getUserById(db, "image-app-users", userId)).then(function (
+      user
+    ) {
+      if (user) {
+        const userIds = user.followedIds;
+
+        callPromise(
+          getPostsOfUser(db, "image-app-posts", userIds, dateFilter, true)
+        ).then(function (posts) {
+          if (posts) {
+            resolve(posts);
+          } else {
+            resolve(false);
+          }
+        });
+      } else {
+        resolve(false);
+      }
+    });
+  });
+};
+
 const Post = {
   createPost,
   getPostById,
   getPostsByTags,
   deletePost,
+  isCreator,
   getLikedPostsByUser,
   getPostsOfUser,
   getPostsByDate,
   getTopLikedPosts,
+  getUserFeed,
 };
 
 export default Post;

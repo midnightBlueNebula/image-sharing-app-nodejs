@@ -1,9 +1,4 @@
-/**
- * This is the main Node.js server script for your project
- * Check out the two endpoints this back-end API provides in fastify.get and fastify.post below
- */
-
-import "dotenv/config"; // This automatically loads environment variables from .env file.
+import "dotenv/config";
 import path from "path";
 import bodyParser from "body-parser";
 import pkg from "mongodb";
@@ -42,7 +37,7 @@ MongoClient.connect(
   {
     useNewUrlParser: true,
     useUnifiedTopology: true,
-    poolsize: 10 /* pools (caches) 10 connections to run 10 queries in parallel.*/,
+    maxPoolSize: 100 /* pools (caches) 10 connections to run 10 queries in parallel.*/,
   },
 
   function (err, client) {

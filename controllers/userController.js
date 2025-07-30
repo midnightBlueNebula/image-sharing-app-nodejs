@@ -1,8 +1,11 @@
 import bcrypt from "bcrypt";
 import pkg from "mongodb";
 const { ObjectId } = pkg;
+import User from "../models/user.js";
+import Post from "../models/post.js";
 import h from "../helper.js";
 import callPromise from "../callPromise.js";
+const __dirname = process.cwd();
 
 const saltRounds = 12;
 
@@ -24,9 +27,7 @@ export default function (app, db) {
       const name = h.cleanseString(req.body.name);
       const password = req.body.password;
 
-      callPromise(getUserByEmail(db, "image-app-users", email)).then(function (
-        result
-      ) {
+      callPromise(User.getUserByEmail(db, email)).then(function (result) {
         if (result) {
           res.send("email has already been taken");
           return;
@@ -76,9 +77,7 @@ export default function (app, db) {
     const email = h.cleanseString(req.body.email);
     const password = req.body.password;
 
-    callPromise(getUserByEmail(db, "image-app-users", email)).then(function (
-      result
-    ) {
+    callPromise(User.getUserByEmail(db, email)).then(function (result) {
       if (!result) {
         res.send("Email is not registered.");
         return;
@@ -114,22 +113,23 @@ export default function (app, db) {
 
     req.session.currentURL = "/profile";
 
-    callPromise(getUserById(db, "image-app-users", id)).then(function (user) {
-      callPromise(
-        getPostsOfUser(db, "image-app-posts", user._id.toString())
-      ).then(function (posts) {
-        callPromise(
-          getLikedPostsByUser(db, "image-app-posts", user._id.toString())
-        ).then(function (likedPosts) {
-          getCreatorPerPostThenRender(
-            h.renderWithData,
-            res,
-            "profile.ejs",
-            { user: user, posts: posts, viewerId: req.session.user_id },
-            likedPosts,
-            1
-          );
-        });
+    callPromise(User.getUserById(db, id)).then(function (user) {
+      callPromise(Post.getPostsOfUser(db, user._id.toString())).then(function (
+        posts
+      ) {
+        callPromise(Post.getLikedPostsByUser(db, user._id.toString())).then(
+          function (likedPosts) {
+            User.getCreatorPerPostThenRender(
+              h.renderWithData,
+              res,
+              "profile.ejs",
+              { user: user, posts: posts, viewerId: req.session.user_id },
+              likedPosts,
+              1,
+              db
+            );
+          }
+        );
       });
     });
   });
@@ -188,5 +188,22 @@ export default function (app, db) {
     );
 
     res.redirect("/profile");
+  });
+
+  app.get("/getUserJSON/:id", (req, res) => {
+    User.getUserById(db, ObjectId(req.params.id)).then(function (user) {
+      if (user) {
+        res.json({
+          creatorId: user._id.toString(),
+          viewerId: req.session.user_id,
+          name: user.name,
+          about: user.about,
+          image: user.profileImageURL,
+          followerIds: user.followerIds,
+        });
+      } else {
+        res.send(false);
+      }
+    });
   });
 }
