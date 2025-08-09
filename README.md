@@ -11,4 +11,4 @@ Following other users.
 
 Only registered and logged-in users can post content, like, comment, or follow others.
 
-You can try the live demo [here](https://image-sharing-with-mongodb.glitch.me/](https://image-sharing-app-nodejs-sjaj.onrender.com)
+You can try the live demo [here](https://image-sharing-app-nodejs-sjaj.onrender.com)
