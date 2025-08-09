@@ -1,7 +1,14 @@
-# Instagram like social media: Image Sharing App!
-Includes: Image sharing with title and context, liking contents and comments (only one like allowed for per user, 
-content creators can't "like" their own content), commenting on contents and other comments, following users.
+Instagram-like Social Media: Image Sharing App
+Features include:
 
-Only logged in users allowed to post content, like, comment and follow other user
+Image sharing with a title and description.
 
-Website could be checked by clicking [here](https://image-sharing-with-mongodb.glitch.me/)
+Liking content and comments (one like per user; creators cannot like their own content).
+
+Commenting on posts and replying to other comments.
+
+Following other users.
+
+Only registered and logged-in users can post content, like, comment, or follow others.
+
+You can try the live demo [here:](https://image-sharing-with-mongodb.glitch.me/)
